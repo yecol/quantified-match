@@ -99,12 +99,12 @@ public class QuantifiedPattern {
 			q.add((VertexInt) e.to());
 			int begin = e.from().getID();
 
-			Set<Integer> processed = new HashSet<Integer>();
-			processed.add(begin);
+			Set<Integer> checked = new HashSet<Integer>();
+			checked.add(begin);
 
 			while (!q.isEmpty()) {
 				VertexInt v = q.poll();
-				if (!processed.contains(v.getID())) {
+				if (!checked.contains(v.getID())) {
 					ngGraph.addVertex(v);
 					for (VertexInt cv : graph.getChildren(v)) {
 
@@ -143,7 +143,7 @@ public class QuantifiedPattern {
 						}
 						q.add(pv);
 					}
-					processed.add(v.getID());
+					checked.add(v.getID());
 				}
 			}
 			negativeGraphs.put(negativeGraphIndex, ngGraph);
@@ -157,12 +157,12 @@ public class QuantifiedPattern {
 			Queue<VertexInt> q = new LinkedList<VertexInt>();
 			q.add((VertexInt) e.to());
 
-			Set<Integer> processed = new HashSet<Integer>();
-			processed.add(0);
+			Set<Integer> checked = new HashSet<Integer>();
+			checked.add(0);
 
 			while (!q.isEmpty()) {
 				VertexInt v = q.poll();
-				if (!processed.contains(v.getID())) {
+				if (!checked.contains(v.getID())) {
 					ngGraph.addVertex(v);
 					for (VertexInt cv : graph.getChildren(v)) {
 
@@ -194,7 +194,7 @@ public class QuantifiedPattern {
 						}
 						q.add(pv);
 					}
-					processed.add(v.getID());
+					checked.add(v.getID());
 				}
 			}
 			negativeGraphs.put(negativeGraphIndex, ngGraph);
@@ -253,7 +253,6 @@ public class QuantifiedPattern {
 		this.graph.loadGraphFromVEFile(filePath, true);
 
 		mapU2PercentageEdgeType = new HashMap<Integer, Integer>();
-
 		FileInputStream fileInputStream = null;
 		Scanner sc = null;
 

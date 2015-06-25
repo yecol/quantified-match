@@ -1,5 +1,6 @@
 package inf.ed.graph.quantified;
 
+import static inf.ed.graph.quantified.State.NULL_NODE;
 import inf.ed.graph.structure.Edge;
 import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalEdge;
@@ -26,11 +27,9 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static inf.ed.graph.quantified.State.NULL_NODE;
+public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
-public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> {
-
-	static Logger log = LogManager.getLogger(QuantifiedIsomorphismInspector.class);
+	static Logger log = LogManager.getLogger(BaseMatcher.class);
 
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
@@ -45,13 +44,13 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
-	public QuantifiedIsomorphismInspector() {
+	public BaseMatcher() {
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public boolean isQuantifedIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
+	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
 
 		this.p = p;
 		this.g = g;
@@ -73,11 +72,21 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 	private boolean findMathesOfPI() {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = makeInitialState(p.getPI(), v1, g, v2);
+		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2);
 		queue.add(initState);
 
 		checkAndCountTypedEdgeForPercentage(v1, v2);
 		return this.findMatchesWithState(queue, matches);
+	}
+
+	private boolean findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph,
+			List<Int2IntMap> ngMatches) {
+
+		Queue<State> queue = new LinkedList<State>();
+		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2);
+		queue.add(initState);
+
+		return this.findMatchesWithState(queue, ngMatches);
 	}
 
 	/**
@@ -86,6 +95,8 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 	 * @return true if need to continue.
 	 */
 	private boolean validateMatchesOfPi() {
+
+		log.debug("before validate matches of Pi:" + matches.size());
 
 		Set<Integer> checked = new HashSet<Integer>();
 		Queue<Integer> queue = new LinkedList<Integer>();
@@ -97,12 +108,15 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 				// current deal with edge fu->u in Q
 				Quantifier quantifier = p.getQuantifierWithEdge(fu, u);
 				boolean changedfv = this.filterMatches(fu, u, quantifier);
+				// if changed the count of fv (mapping of fu).
 				if ((checked.contains(fu) && changedfv) || !checked.contains(fu)) {
 					queue.add(fu);
 				}
 			}
 			checked.add(u);
 		}
+
+		log.debug("after validate matches of Pi:" + matches.size());
 
 		return !matches.isEmpty();
 	}
@@ -172,92 +186,44 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 	}
 
 	private boolean checkNegatives() {
-		//
-		// for (NegationPath path : p.getNegativePathes()) {
-		//
-		// // log.debug("negative path = " + path.toString());
-		//
-		// VertexInt startu = path.getStartVertex();
-		// IntSet starterSet = new IntOpenHashSet();
-		// for (Int2IntMap match : matches) {
-		// starterSet.add(match.get(startu.getID()));
-		// }
-		//
-		// // log.debug("candicate startv=" + starterSet.toString());
-		//
-		// VertexInt u;
-		// IntSet vSet = new IntOpenHashSet();
-		// IntSet vtSet = new IntOpenHashSet();
-		//
-		// for (int startv : starterSet) {
-		//
-		// u = startu;
-		//
-		// vSet.clear();
-		// vSet.add(startv);
-		//
-		// vtSet.clear();
-		//
-		// while (path.hasNext(u)) {
-		//
-		// VertexInt ut = path.getNextVertex(u);
-		// TypedEdge e = path.getNextEdge(u);
-		//
-		// for (int v : vSet) {
-		// for (int vt : g.getChildren(v)) {
-		// if (ut.match(g.getVertex(vt)) && e.match(g.getEdge(v, vt))) {
-		// vtSet.add(vt);
-		// }
-		// }
-		// }
-		//
-		// vSet.clear();
-		// vSet.addAll(vtSet);
-		// vtSet.clear();
-		// u = ut;
-		// }
-		//
-		// // log.debug("vSet=" + vSet.toString());
-		//
-		// if (path.isFreeEnding() && !vSet.isEmpty()) {
-		// // is free ending, delete any matches begin with startv
-		// Iterator<Int2IntMap> it = matches.iterator();
-		// while (it.hasNext()) {
-		// if (it.next().get(startu.getID()) == startv) {
-		// it.remove();
-		// }
-		// }
-		// }
-		//
-		// else if (!path.isFreeEnding()) {
-		// // remove matches begin with startv and end with vSet;
-		// Iterator<Int2IntMap> it = matches.iterator();
-		// while (it.hasNext()) {
-		// Int2IntMap match = it.next();
-		// if (match.get(startu.getID()) == startv
-		// && vSet.contains(match.get(u.getID())))
-		// it.remove();
-		// }
-		// }
-		// }
-		// }
-		//
-		// return !matches.isEmpty();
-		//
-		return true;
-	}
 
-	/**
-	 * Creates an empty {@link State} for mapping the vertices of {@code g1} to
-	 * {@code g2}.
-	 */
-	private State makeInitialState(Graph<VertexInt, TypedEdge> p, int v1, Graph<VG, EG> g, int v2) {
-		return new SubVF2State<VertexInt, VG, TypedEdge, EG>(p, v1, g, v2);
+		log.debug("before check negative:" + matches.size());
+
+		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
+
+		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForOriginal()) {
+			findNegativeMathes(ngGraph, ngMatches);
+		}
+
+		for (Int2IntMap ngMatch : ngMatches) {
+			// log.debug("current ngMatche = " + ngMatch.toString());
+			if (ngMatch.size() <= 1) {
+				log.error("!!!!!!!!!!!!!!!!error:ngMatch size should at least = 2.");
+			}
+			Iterator<Int2IntMap> it = matches.iterator();
+			while (it.hasNext()) {
+				Int2IntMap pMatch = it.next();
+				boolean rm = true;
+				for (int ngKey : ngMatch.keySet()) {
+					if (pMatch.containsKey(ngKey) && pMatch.get(ngKey) != ngMatch.get(ngKey)) {
+						// pMatch and ngMatch have the same key but different
+						// mapping.
+						rm = false;
+						break;
+					}
+				}
+				if (rm) {
+					it.remove();
+				}
+			}
+		}
+
+		log.debug("after check negatives:" + matches.size());
+
+		return !matches.isEmpty();
 	}
 
 	private boolean findMatchesWithState(Queue<State> q, List<Int2IntMap> matches) {
-
-		log.debug("MapU2PercentageEdgeType===============" + p.getMapU2PercentageEdgeType());
 
 		while (!q.isEmpty()) {
 
@@ -288,8 +254,9 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 			}
 		}
 
-		log.info("================find all matches with state===============");
-		log.info("this.mapV2TypedEdgeCount" + this.mapV2TypedEdgeCount.toString());
+		// log.info("================findMatchesWithState finished==================");
+		// log.info("this.mapV2TypedEdgeCount" +
+		// this.mapV2TypedEdgeCount.toString());
 		return !matches.isEmpty();
 	}
 

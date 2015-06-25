@@ -48,8 +48,8 @@ public class EfficiencyTest {
 
 		for (int v : candidates) {
 			log.info("=====================current process " + v + "====================");
-			QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-			boolean iso = inspector.isQuantifedIsomorphic(pp, 0, g, v);
+			BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 			if (iso == true) {
 				yes.add(v);
 			}
@@ -61,8 +61,8 @@ public class EfficiencyTest {
 
 		for (int v : candidates) {
 			log.info("=====================current process " + v + "====================");
-			QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-			boolean iso = inspector.isQuantifedIsomorphic(pp, 0, g, v);
+			BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 			if (iso == true) {
 				yes.add(v);
 			}

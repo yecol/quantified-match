@@ -9,7 +9,6 @@ import inf.ed.graph.structure.adaptor.VertexOInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FunctionalTest {
@@ -53,30 +52,32 @@ public class FunctionalTest {
 
 		QuantifiedPattern p1 = new QuantifiedPattern();
 		p1.loadPatternFromVEFile("dataset/test/q1");
-
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector1 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++");
-		assertEquals(true, inspector1.isQuantifedIsomorphic(p1, 0, g, 1));
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector2 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		System.out.println("---------------------------------------------------");
-		assertEquals(true, inspector2.isQuantifedIsomorphic(p1, 0, g, 2));
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector3 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		System.out.println("---------------------------------------------------");
-		assertEquals(false, inspector3.isQuantifedIsomorphic(p1, 0, g, 3));
+		
+		System.out.println("++++++++++++++++++ match tester for pattern #1 ++++++++++++++++++++++++++++++++");
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector1 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		System.out.println("------------------ a single match, candidate = 1 in g1 ------------------------");
+		assertEquals(true, inspector1.isIsomorphic(p1, 0, g, 1));
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector2 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		System.out.println("------------------ a single match, candidate = 2 in g1 ------------------------");
+		assertEquals(true, inspector2.isIsomorphic(p1, 0, g, 2));
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector3 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		System.out.println("------------------ a single match, candidate = 3 in g1 ------------------------");
+		assertEquals(false, inspector3.isIsomorphic(p1, 0, g, 3));
 
 		QuantifiedPattern p2 = new QuantifiedPattern();
 		p2.loadPatternFromVEFile("dataset/test/q2");
 		// p2.display();
-		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++");
-
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector4 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		assertEquals(false, inspector4.isQuantifedIsomorphic(p2, 0, g, 1));
-		System.out.println("---------------------------------------------------");
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector5 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		assertEquals(true, inspector5.isQuantifedIsomorphic(p2, 0, g, 2));
-		System.out.println("---------------------------------------------------");
-		QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge> inspector6 = new QuantifiedIsomorphismInspector<VertexOInt, OrthogonalEdge>();
-		assertEquals(false, inspector6.isQuantifedIsomorphic(p2, 0, g, 3));
+		
+		System.out.println("++++++++++++++++++ match tester for pattern #2 ++++++++++++++++++++++++++++++++");
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector4 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		System.out.println("------------------ a single match, candidate = 1 in g1 ------------------------");
+		assertEquals(false, inspector4.isIsomorphic(p2, 0, g, 1));
+		System.out.println("------------------ a single match, candidate = 2 in g1 ------------------------");
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector5 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		assertEquals(true, inspector5.isIsomorphic(p2, 0, g, 2));
+		System.out.println("------------------ a single match, candidate = 3 in g1 ------------------------");
+		BaseMatcher<VertexOInt, OrthogonalEdge> inspector6 = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+		assertEquals(false, inspector6.isIsomorphic(p2, 0, g, 3));
 
 	}
 }
