@@ -1,9 +1,17 @@
 package inf.ed.graph.quantified;
 
+import java.util.Map;
+
 import inf.ed.graph.structure.Edge;
 import inf.ed.graph.structure.Graph;
+import inf.ed.graph.structure.OrthogonalEdge;
 import inf.ed.graph.structure.Vertex;
+import inf.ed.graph.structure.adaptor.TypedEdge;
+import inf.ed.graph.structure.adaptor.VertexInt;
+import inf.ed.graph.structure.adaptor.VertexOInt;
+import inf.ed.graph.structure.auxiliary.KeyGen;
 import inf.ed.graph.structure.auxiliary.Pair;
+import inf.ed.graph.structure.auxiliary.Quantifier;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -29,6 +37,8 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 		implements State {
 
 	static Logger log = LogManager.getLogger(SubVF2State.class);
+
+	final private Map<String, Quantifier> quantifiers;
 
 	/**
 	 * The query graph
@@ -98,17 +108,19 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 	 * time {@code areEdgesCompatible} is called (a hot spot), when it is
 	 * already known at state construction time.
 	 */
-	private final boolean checkMultiplexEdges;
+	private final boolean checkQuantifiers;
 
 	/**
 	 * Creates a new {@code VF2State} with an empty mapping between the two
 	 * graphs.
 	 */
-	public SubVF2State(Graph<VQ, EQ> p, int v1, Graph<VG, EG> g, int v2) {
+	public SubVF2State(Graph<VQ, EQ> p, int v1, Graph<VG, EG> g, int v2,
+			Map<String, Quantifier> quantifiers, boolean checkQuantifiers) {
 		this.p = p;
 		this.g = g;
 
-		this.checkMultiplexEdges = false;
+		this.checkQuantifiers = false;
+		this.quantifiers = quantifiers;
 
 		n1 = p.vertexSize();
 		n2 = g.vertexSize();
@@ -150,7 +162,8 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 
 	@SuppressWarnings("unchecked")
 	protected SubVF2State(SubVF2State copy) {
-		checkMultiplexEdges = copy.checkMultiplexEdges;
+		quantifiers = copy.quantifiers;
+		checkQuantifiers = copy.checkQuantifiers;
 		p = copy.p;
 		g = copy.g;
 		coreLen = copy.coreLen;
@@ -197,6 +210,30 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 		return this.p.getVertex(v1).match(g.getVertex(v2));
 	}
 
+	private boolean areCompatableQuantifiers(int v1, int v2) {
+		// test for quantifiers.
+		if (checkQuantifiers) {
+			for (int other1 : p.getChildren(v1)) {
+				TypedEdge te = (TypedEdge) p.getEdge(v1, other1);
+				Quantifier f = quantifiers.get(KeyGen.getTypedEdgeKey(te));
+				if (f.isExistential()) {
+					continue;
+				} else if (f.isCount()
+						&& !f.isValid(getEdgePatternCount(v2, te.getAttr(),
+								((VertexInt) p.getVertex(other1)).getAttr()))) {
+					return false;
+				} else if (f.isPercentage()
+						&& !f.isValid(
+								getEdgePatternCount(v2, te.getAttr(),
+										((VertexInt) p.getVertex(other1)).getAttr()),
+								getEdgeCount(v2, te.getAttr()))) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -206,6 +243,10 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 		assert !core1.containsKey(node1);
 
 		if (!areCompatableVertices(node1, node2)) {
+			return false;
+		}
+
+		if (!areCompatableQuantifiers(node1, node2)) {
 			return false;
 		}
 
@@ -497,5 +538,28 @@ public class SubVF2State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, 
 	@Override
 	public int curN1() {
 		return u;
+	}
+
+	private int getEdgeCount(int fromID, int edgeAttr) {
+		int ret = 0;
+		for (int toID : g.getChildren(fromID)) {
+			if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr) {
+				ret++;
+			}
+		}
+		// log.debug("edge count=" + ret);
+		return ret;
+	}
+
+	private int getEdgePatternCount(int fromID, int edgeAttr, int tnAttr) {
+		int ret = 0;
+		for (int toID : g.getChildren(fromID)) {
+			if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr
+					&& ((VertexOInt) g.getVertex(toID)).getAttr() == tnAttr) {
+				ret++;
+			}
+		}
+		// log.debug("edge pattern count=" + ret);
+		return ret;
 	}
 }

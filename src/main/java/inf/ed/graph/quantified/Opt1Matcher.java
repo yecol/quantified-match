@@ -27,9 +27,15 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class BaseMatcher<VG extends Vertex, EG extends Edge> {
+/**
+ * Optimisation: check quantifiers in VF2.
+ * 
+ * @author yecol
+ *
+ */
+public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
-	static Logger log = LogManager.getLogger(BaseMatcher.class);
+	static Logger log = LogManager.getLogger(Opt1Matcher.class);
 
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
@@ -44,7 +50,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
-	public BaseMatcher() {
+	public Opt1Matcher() {
 	}
 
 	/**
@@ -73,7 +79,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 		Queue<State> queue = new LinkedList<State>();
 		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
-				p.getQuantifiers(), false);
+				p.getQuantifiers(), true);
 		queue.add(initState);
 
 		checkAndCountTypedEdgeForPercentage(v1, v2);
@@ -85,7 +91,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 		Queue<State> queue = new LinkedList<State>();
 		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
-				p.getQuantifiers(), false);
+				p.getQuantifiers(), true);
 		queue.add(initState);
 
 		return this.findMatchesWithState(queue, ngMatches);
