@@ -31,8 +31,8 @@ public class QuantifiedPattern {
 
 	private Graph<VertexInt, TypedEdge> graph;
 	private Graph<VertexInt, TypedEdge> piGraph;
-	// private List<Graph<VertexInt, TypedEdge>> negativeGraphs;
-	private List<NegationPath> negativePathes;
+
+	private Map<Integer, Graph<VertexInt, TypedEdge>> negativeGraphs;
 
 	private Map<String, Quantifier> quantifers;
 
@@ -44,7 +44,6 @@ public class QuantifiedPattern {
 	private boolean isValid() {
 		// TODO: check whether this pattern is valid.
 		// not support for more than one kind of percentage edges from one node;
-		// not support branches in the successors of a negation edge;
 		// no more than 2 single negation edge in a path.
 		return true;
 	}
@@ -79,7 +78,6 @@ public class QuantifiedPattern {
 			while (!q.isEmpty()) {
 				VertexInt v = q.poll();
 				if (this.piGraph.getParents(v).isEmpty()) {
-
 					for (VertexInt cv : this.piGraph.getChildren(v)) {
 						this.piGraph.removeEdge(v, cv);
 						q.add(cv);
@@ -89,45 +87,146 @@ public class QuantifiedPattern {
 			}
 		}
 
-		// build negative graphs
-		negativePathes = new ArrayList<NegationPath>();
+		// build negative graphs for original and incremental filtering.
+		negativeGraphs = new HashMap<Integer, Graph<VertexInt, TypedEdge>>();
+		int negativeGraphIndex = 0;
+
+		// incremental should comes first. keep free ending index available.
 		for (TypedEdge e : negationEdges) {
+			Graph<VertexInt, TypedEdge> ngGraph = new SimpleGraph<VertexInt, TypedEdge>(
+					VertexInt.class, TypedEdge.class);
+			Queue<VertexInt> q = new LinkedList<VertexInt>();
+			q.add((VertexInt) e.to());
+			int begin = e.from().getID();
 
-			NegationPath negationPath = new NegationPath();
+			Set<Integer> processed = new HashSet<Integer>();
+			processed.add(begin);
 
-			VertexInt cf = (VertexInt) e.from();
-			VertexInt ct = (VertexInt) e.to();
-			negationPath.addVertex(cf);
-			negationPath.addVertex(ct);
-			negationPath.addEdge(e);
+			while (!q.isEmpty()) {
+				VertexInt v = q.poll();
+				if (!processed.contains(v.getID())) {
+					ngGraph.addVertex(v);
+					for (VertexInt cv : graph.getChildren(v)) {
 
-			while (!graph.getChildren(ct).isEmpty()) {
+						TypedEdge edge = graph.getEdge(v.getID(), cv.getID());
 
-				if (graph.getChildren(ct).size() != 1) {
-					throw new IllegalArgumentException("invalid pattern. ct=" + ct
-							+ ", children size = " + graph.getChildren(ct).size());
-				}
-				cf = ct;
-				ct = graph.getChildren(ct).iterator().next();
-				negationPath.addVertex(ct);
-				TypedEdge ce = graph.getEdge(cf.getID(), ct.getID());
-				negationPath.addEdge(ce);
+						if (!edge.equals(e) && negationEdges.contains(edge)) {
+							// each ngGraph contains only one negative edge
+							continue;
+						}
+						if (!ngGraph.contains(cv.getID())) {
+							ngGraph.addVertex(cv);
+						}
+						if (!ngGraph.contains(v, cv)) {
+							ngGraph.addEdge(edge);
+						}
+						if (piGraph.contains(cv.getID())) {
+							continue;
+						}
+						q.add(cv);
+					}
+					for (VertexInt pv : graph.getParents(v)) {
 
-				if (piGraph.contains(ct.getID())) {
-					negationPath.setNotFreeEnding();
-					break;
+						TypedEdge edge = graph.getEdge(pv.getID(), v.getID());
+						if (!edge.equals(e) && negationEdges.contains(edge)) {
+							// each ngGraph contains only one negative edge.
+							continue;
+						}
+						if (!ngGraph.contains(pv.getID())) {
+							ngGraph.addVertex(pv);
+						}
+						if (!ngGraph.contains(pv, v)) {
+							ngGraph.addEdge(edge);
+						}
+						if (piGraph.contains(pv.getID()) && pv.getID() != begin) {
+							continue;
+						}
+						q.add(pv);
+					}
+					processed.add(v.getID());
 				}
 			}
-			negativePathes.add(negationPath);
+			negativeGraphs.put(negativeGraphIndex, ngGraph);
+			negativeGraphIndex++;
 		}
+
+		// origin
+		for (TypedEdge e : negationEdges) {
+			Graph<VertexInt, TypedEdge> ngGraph = new SimpleGraph<VertexInt, TypedEdge>(
+					VertexInt.class, TypedEdge.class);
+			Queue<VertexInt> q = new LinkedList<VertexInt>();
+			q.add((VertexInt) e.to());
+
+			Set<Integer> processed = new HashSet<Integer>();
+			processed.add(0);
+
+			while (!q.isEmpty()) {
+				VertexInt v = q.poll();
+				if (!processed.contains(v.getID())) {
+					ngGraph.addVertex(v);
+					for (VertexInt cv : graph.getChildren(v)) {
+
+						TypedEdge edge = graph.getEdge(v.getID(), cv.getID());
+						if (!edge.equals(e) && negationEdges.contains(edge)) {
+							// each ngGraph contains only one negative edge
+							continue;
+						}
+						if (!ngGraph.contains(cv.getID())) {
+							ngGraph.addVertex(cv);
+						}
+						if (!ngGraph.contains(v, cv)) {
+							ngGraph.addEdge(edge);
+						}
+						q.add(cv);
+					}
+					for (VertexInt pv : graph.getParents(v)) {
+
+						TypedEdge edge = graph.getEdge(pv.getID(), v.getID());
+						if (!edge.equals(e) && negationEdges.contains(edge)) {
+							// each ngGraph contains only one negative edge.
+							continue;
+						}
+						if (!ngGraph.contains(pv.getID())) {
+							ngGraph.addVertex(pv);
+						}
+						if (!ngGraph.contains(pv, v)) {
+							ngGraph.addEdge(edge);
+						}
+						q.add(pv);
+					}
+					processed.add(v.getID());
+				}
+			}
+			negativeGraphs.put(negativeGraphIndex, ngGraph);
+			negativeGraphIndex++;
+		}
+
 	}
 
 	public Graph<VertexInt, TypedEdge> getPI() {
 		return this.piGraph;
 	}
 
-	public List<NegationPath> getNegativePathes() {
-		return this.negativePathes;
+	public Map<Integer, Graph<VertexInt, TypedEdge>> getNegativePathes() {
+		return this.negativeGraphs;
+	}
+
+	public List<Graph<VertexInt, TypedEdge>> getNegativeGraphsForIncremental() {
+		List<Graph<VertexInt, TypedEdge>> ret = new ArrayList<Graph<VertexInt, TypedEdge>>();
+		int endKey = negativeGraphs.size() / 2;
+		for (int k = 0; k < endKey; k++) {
+			ret.add(negativeGraphs.get(k));
+		}
+		return ret;
+	}
+
+	public List<Graph<VertexInt, TypedEdge>> getNegativeGraphsForOriginal() {
+		List<Graph<VertexInt, TypedEdge>> ret = new ArrayList<Graph<VertexInt, TypedEdge>>();
+		int beginKey = negativeGraphs.size() / 2;
+		for (int k = beginKey; k < negativeGraphs.size(); k++) {
+			ret.add(negativeGraphs.get(k));
+		}
+		return ret;
 	}
 
 	public Map<Integer, Integer> getMapU2PercentageEdgeType() {
@@ -196,8 +295,8 @@ public class QuantifiedPattern {
 
 	public void display() {
 
-		System.out.println("=======================================");
-		System.out.println("print pattern:");
+		System.out.println("======================= a single pattern ==========================");
+		System.out.println("print original pattern:");
 		System.out.println(this.graph.allVertices().size() + " vertices.");
 		for (VertexInt v : graph.allVertices().values()) {
 			System.out.println(v.toString());
@@ -209,15 +308,22 @@ public class QuantifiedPattern {
 			estr += this.quantifers.get(KeyGen.getTypedEdgeKey(e));
 			System.out.println(estr);
 		}
-		System.out.println("---------------------------------------");
-		System.out.println("print pigraph:");
+		System.out.println("--------------- pi graph ----------------------------");
 		this.piGraph.display(1000);
-		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-		System.out.println("there are " + negativePathes.size() + " negative graphs.");
-		for (NegationPath path : negativePathes) {
-			System.out.println("----------------------------------------");
-			System.out.println("print nagetive graph :");
-			System.out.println(path.toString());
+		System.out.println("--------------" + this.getNegativeGraphsForOriginal().size()
+				+ " original negative graph -------------");
+		for (Graph<VertexInt, TypedEdge> ngGraph : this.getNegativeGraphsForOriginal()) {
+			ngGraph.display(1000);
+			System.out.println("-----------------");
+		}
+		List<Graph<VertexInt, TypedEdge>> incNegativeGraphs = this
+				.getNegativeGraphsForIncremental();
+		System.out.println("---------------" + incNegativeGraphs.size()
+				+ " increamental negative graph---------------");
+
+		for (int i = 0; i < incNegativeGraphs.size(); i++) {
+			incNegativeGraphs.get(i).display(1000);
+			System.out.println("-----------------");
 		}
 
 	}
@@ -229,19 +335,5 @@ public class QuantifiedPattern {
 
 	public Map<String, Quantifier> getQuantifiers() {
 		return this.quantifers;
-	}
-
-	public static void main(String[] args) {
-		QuantifiedPattern p1 = new QuantifiedPattern();
-		p1.loadPatternFromVEFile("dataset/quantified/q1");
-		p1.display();
-
-		QuantifiedPattern p2 = new QuantifiedPattern();
-		p2.loadPatternFromVEFile("dataset/quantified/q2");
-		p2.display();
-
-		QuantifiedPattern p5 = new QuantifiedPattern();
-		p5.loadPatternFromVEFile("dataset/quantified/q5");
-		p5.display();
 	}
 }

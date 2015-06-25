@@ -62,12 +62,12 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 		this.mapU2RemovedVs = new Int2ObjectOpenHashMap<IntSet>();
 		this.matches = new ArrayList<Int2IntMap>();
 
-		boolean iso = this.findMathesOfPI() && this.validateMatchesOfPi() && this.checkNegatives()
-				&& this.validateMatchesOfPi();
+		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
+				&& this.checkNegatives() && this.validateMatchesOfPi();
 
 		log.info("final matches results: size = " + matches.size());
 		log.debug(matches.toString());
-		return iso;
+		return valid;
 	}
 
 	private boolean findMathesOfPI() {
@@ -172,78 +172,79 @@ public class QuantifiedIsomorphismInspector<VG extends Vertex, EG extends Edge> 
 	}
 
 	private boolean checkNegatives() {
-
-		for (NegationPath path : p.getNegativePathes()) {
-
-			// log.debug("negative path = " + path.toString());
-
-			VertexInt startu = path.getStartVertex();
-			IntSet starterSet = new IntOpenHashSet();
-			for (Int2IntMap match : matches) {
-				starterSet.add(match.get(startu.getID()));
-			}
-
-			// log.debug("candicate startv=" + starterSet.toString());
-
-			VertexInt u;
-			IntSet vSet = new IntOpenHashSet();
-			IntSet vtSet = new IntOpenHashSet();
-
-			for (int startv : starterSet) {
-
-				u = startu;
-
-				vSet.clear();
-				vSet.add(startv);
-
-				vtSet.clear();
-
-				while (path.hasNext(u)) {
-
-					VertexInt ut = path.getNextVertex(u);
-					TypedEdge e = path.getNextEdge(u);
-
-					for (int v : vSet) {
-						for (int vt : g.getChildren(v)) {
-							if (ut.match(g.getVertex(vt)) && e.match(g.getEdge(v, vt))) {
-								vtSet.add(vt);
-							}
-						}
-					}
-
-					vSet.clear();
-					vSet.addAll(vtSet);
-					vtSet.clear();
-					u = ut;
-				}
-
-				// log.debug("vSet=" + vSet.toString());
-
-				if (path.isFreeEnding() && !vSet.isEmpty()) {
-					// is free ending, delete any matches begin with startv
-					Iterator<Int2IntMap> it = matches.iterator();
-					while (it.hasNext()) {
-						if (it.next().get(startu.getID()) == startv) {
-							it.remove();
-						}
-					}
-				}
-
-				else if (!path.isFreeEnding()) {
-					// remove matches begin with startv and end with vSet;
-					Iterator<Int2IntMap> it = matches.iterator();
-					while (it.hasNext()) {
-						Int2IntMap match = it.next();
-						if (match.get(startu.getID()) == startv
-								&& vSet.contains(match.get(u.getID())))
-							it.remove();
-					}
-				}
-			}
-		}
-
-		return !matches.isEmpty();
-
+		//
+		// for (NegationPath path : p.getNegativePathes()) {
+		//
+		// // log.debug("negative path = " + path.toString());
+		//
+		// VertexInt startu = path.getStartVertex();
+		// IntSet starterSet = new IntOpenHashSet();
+		// for (Int2IntMap match : matches) {
+		// starterSet.add(match.get(startu.getID()));
+		// }
+		//
+		// // log.debug("candicate startv=" + starterSet.toString());
+		//
+		// VertexInt u;
+		// IntSet vSet = new IntOpenHashSet();
+		// IntSet vtSet = new IntOpenHashSet();
+		//
+		// for (int startv : starterSet) {
+		//
+		// u = startu;
+		//
+		// vSet.clear();
+		// vSet.add(startv);
+		//
+		// vtSet.clear();
+		//
+		// while (path.hasNext(u)) {
+		//
+		// VertexInt ut = path.getNextVertex(u);
+		// TypedEdge e = path.getNextEdge(u);
+		//
+		// for (int v : vSet) {
+		// for (int vt : g.getChildren(v)) {
+		// if (ut.match(g.getVertex(vt)) && e.match(g.getEdge(v, vt))) {
+		// vtSet.add(vt);
+		// }
+		// }
+		// }
+		//
+		// vSet.clear();
+		// vSet.addAll(vtSet);
+		// vtSet.clear();
+		// u = ut;
+		// }
+		//
+		// // log.debug("vSet=" + vSet.toString());
+		//
+		// if (path.isFreeEnding() && !vSet.isEmpty()) {
+		// // is free ending, delete any matches begin with startv
+		// Iterator<Int2IntMap> it = matches.iterator();
+		// while (it.hasNext()) {
+		// if (it.next().get(startu.getID()) == startv) {
+		// it.remove();
+		// }
+		// }
+		// }
+		//
+		// else if (!path.isFreeEnding()) {
+		// // remove matches begin with startv and end with vSet;
+		// Iterator<Int2IntMap> it = matches.iterator();
+		// while (it.hasNext()) {
+		// Int2IntMap match = it.next();
+		// if (match.get(startu.getID()) == startv
+		// && vSet.contains(match.get(u.getID())))
+		// it.remove();
+		// }
+		// }
+		// }
+		// }
+		//
+		// return !matches.isEmpty();
+		//
+		return true;
 	}
 
 	/**

@@ -26,7 +26,7 @@ public class FunctionalTest {
 		g.loadGraphFromVEFile(filePath, true);
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void display() {
 
@@ -35,11 +35,15 @@ public class FunctionalTest {
 
 		QuantifiedPattern p1 = new QuantifiedPattern();
 		p1.loadPatternFromVEFile("dataset/test/q1");
-		// p1.display();
+		p1.display();
 
 		QuantifiedPattern p2 = new QuantifiedPattern();
 		p2.loadPatternFromVEFile("dataset/test/q2");
-		// p2.display();
+		p2.display();
+
+		QuantifiedPattern p5 = new QuantifiedPattern();
+		p5.loadPatternFromVEFile("dataset/test/q5");
+		p5.display();
 
 	}
 
