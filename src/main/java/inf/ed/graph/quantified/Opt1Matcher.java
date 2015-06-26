@@ -28,7 +28,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Optimisation: check quantifiers in VF2.
+ * Optimisation: check quantifiers in VF2
+ * 
+ * 
  * 
  * @author yecol
  *
@@ -36,6 +38,9 @@ import org.apache.logging.log4j.Logger;
 public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
 	static Logger log = LogManager.getLogger(Opt1Matcher.class);
+
+	/* check quantifiers in VF2 optimisation flag */
+	static private final boolean flagCheckQuantifierInVF2Opt = true;
 
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
@@ -46,7 +51,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	List<Int2IntMap> matches;// matches of pi graph of pattern.
 
 	Int2IntMap mapV2TypedEdgeCount;
-	Int2ObjectMap<IntSet> mapU2RemovedVs;
+	QuantifierCheckMatrix m;
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
@@ -64,8 +69,8 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 		this.v2 = v2;
 
 		this.mapV2TypedEdgeCount = new Int2IntOpenHashMap();
-		this.mapU2RemovedVs = new Int2ObjectOpenHashMap<IntSet>();
 		this.matches = new ArrayList<Int2IntMap>();
+		this.m = new QuantifierCheckMatrix(p);
 
 		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
 				&& this.checkNegatives() && this.validateMatchesOfPi();
@@ -75,23 +80,25 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 		return valid;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private boolean findMathesOfPI() {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
-				p.getQuantifiers(), true);
+		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
+				p.getQuantifiers(), m, flagCheckQuantifierInVF2Opt, true);
 		queue.add(initState);
 
 		checkAndCountTypedEdgeForPercentage(v1, v2);
 		return this.findMatchesWithState(queue, matches);
 	}
 
+	@SuppressWarnings("rawtypes")
 	private boolean findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph,
 			List<Int2IntMap> ngMatches) {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
-				p.getQuantifiers(), true);
+		State initState = new State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
+				p.getQuantifiers(), m, flagCheckQuantifierInVF2Opt, false);
 		queue.add(initState);
 
 		return this.findMatchesWithState(queue, ngMatches);
@@ -164,8 +171,9 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 				if (!quantifier.isValid(aggregatedMatchesByFv.get(fv).size(),
 						mapV2TypedEdgeCount.get(fv))) {
 					// remove fv;
-					log.debug(quantifier.toString() + " not valid percentage, remove uFromID="
-							+ ufromID + " matching: fv=" + fv);
+					// log.debug(quantifier.toString() +
+					// " not valid percentage, remove uFromID="
+					// + ufromID + " matching: fv=" + fv);
 					removedTargetMapping.add(fv);
 				}
 			}
@@ -175,8 +183,9 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 			for (int fv : aggregatedMatchesByFv.keySet()) {
 				if (!quantifier.isValid(aggregatedMatchesByFv.get(fv).size())) {
 					// remove fv;
-					log.debug(quantifier.toString() + " not valid count, remove uFromID=" + ufromID
-							+ " matching: fv=" + fv);
+					// log.debug(quantifier.toString() +
+					// " not valid count, remove uFromID=" + ufromID
+					// + " matching: fv=" + fv);
 					removedTargetMapping.add(fv);
 				}
 			}
@@ -231,6 +240,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 		return !matches.isEmpty();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private boolean findMatchesWithState(Queue<State> q, List<Int2IntMap> matches) {
 
 		long start = System.currentTimeMillis();
@@ -267,7 +277,10 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 		// log.info("================findMatchesWithState finished==================");
 		// log.info("this.mapV2TypedEdgeCount" +
 		// this.mapV2TypedEdgeCount.toString());
-		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start) + "ms");
+		// log.info(m.toString());
+
+		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start)
+				+ "ms, find = " + matches.size());
 		return !matches.isEmpty();
 	}
 

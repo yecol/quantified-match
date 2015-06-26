@@ -207,6 +207,10 @@ public class QuantifiedPattern {
 		return this.piGraph;
 	}
 
+	public Graph<VertexInt, TypedEdge> getGraph() {
+		return this.graph;
+	}
+
 	public Map<Integer, Graph<VertexInt, TypedEdge>> getNegativePathes() {
 		return this.negativeGraphs;
 	}

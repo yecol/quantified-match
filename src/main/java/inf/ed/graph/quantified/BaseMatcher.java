@@ -69,23 +69,25 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		return valid;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private boolean findMathesOfPI() {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
-				p.getQuantifiers(), false);
+		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
+				p.getQuantifiers(), null, false, true);
 		queue.add(initState);
 
 		checkAndCountTypedEdgeForPercentage(v1, v2);
 		return this.findMatchesWithState(queue, matches);
 	}
 
+	@SuppressWarnings("rawtypes")
 	private boolean findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph,
 			List<Int2IntMap> ngMatches) {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new SubVF2State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
-				p.getQuantifiers(), false);
+		State initState = new State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
+				p.getQuantifiers(), null, false, false);
 		queue.add(initState);
 
 		return this.findMatchesWithState(queue, ngMatches);
@@ -158,8 +160,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 				if (!quantifier.isValid(aggregatedMatchesByFv.get(fv).size(),
 						mapV2TypedEdgeCount.get(fv))) {
 					// remove fv;
-					log.debug(quantifier.toString() + " not valid percentage, remove uFromID="
-							+ ufromID + " matching: fv=" + fv);
+					// log.debug(quantifier.toString() +
+					// " not valid percentage, remove uFromID="
+					// + ufromID + " matching: fv=" + fv);
 					removedTargetMapping.add(fv);
 				}
 			}
@@ -169,8 +172,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			for (int fv : aggregatedMatchesByFv.keySet()) {
 				if (!quantifier.isValid(aggregatedMatchesByFv.get(fv).size())) {
 					// remove fv;
-					log.debug(quantifier.toString() + " not valid count, remove uFromID=" + ufromID
-							+ " matching: fv=" + fv);
+					// log.debug(quantifier.toString() +
+					// " not valid count, remove uFromID=" + ufromID
+					// + " matching: fv=" + fv);
 					removedTargetMapping.add(fv);
 				}
 			}
@@ -225,6 +229,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		return !matches.isEmpty();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private boolean findMatchesWithState(Queue<State> q, List<Int2IntMap> matches) {
 
 		long start = System.currentTimeMillis();
@@ -261,7 +266,8 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		// log.info("================findMatchesWithState finished==================");
 		// log.info("this.mapV2TypedEdgeCount" +
 		// this.mapV2TypedEdgeCount.toString());
-		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start) + "ms");
+		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start)
+				+ "ms, find = " + matches.size());
 		return !matches.isEmpty();
 	}
 
