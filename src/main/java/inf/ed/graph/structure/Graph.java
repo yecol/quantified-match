@@ -57,6 +57,8 @@ public interface Graph<V extends Vertex, E extends Edge> {
 	 * @return subgraph
 	 */
 	Graph<V, E> getSubgraph(Class<V> vertexClass, Class<E> edgeClass, V center, int bound);
+	
+	Graph<V, E> copy();
 
 	/**
 	 * Load graph from files. Edges are stored in xxx.e, and nodes are in xxx.v.

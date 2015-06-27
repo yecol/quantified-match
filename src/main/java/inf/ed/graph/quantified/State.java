@@ -1,7 +1,8 @@
 package inf.ed.graph.quantified;
 
-import java.util.Map;
-
+import static inf.ed.graph.quantified.QuantifierCheckMatrix.CHECKED_AND_INVALID;
+import static inf.ed.graph.quantified.QuantifierCheckMatrix.CHECKED_AND_VALID;
+import static inf.ed.graph.quantified.QuantifierCheckMatrix.UNCHECKED;
 import inf.ed.graph.structure.Edge;
 import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalEdge;
@@ -14,18 +15,17 @@ import inf.ed.graph.structure.auxiliary.Pair;
 import inf.ed.graph.structure.auxiliary.Quantifier;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static inf.ed.graph.quantified.QuantifierCheckMatrix.CHECKED_AND_INVALID;
-import static inf.ed.graph.quantified.QuantifierCheckMatrix.CHECKED_AND_VALID;
-import static inf.ed.graph.quantified.QuantifierCheckMatrix.UNCHECKED;
 
 /**
  * A {@link State} implementation for testing isomorphism using the VF2
@@ -66,7 +66,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	 * The number of nodes that were matched prior to this current pair being
 	 * added, which is used in backtracking.
 	 */
-	int origCoreLen;
+	// int origCoreLen;
 
 	// State information
 	int t1bothLen, t2bothLen, t1inLen, t1outLen, t2inLen, t2outLen; // Core
@@ -94,12 +94,12 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	/**
 	 * The number of nodes in {@code g1}
 	 */
-	private final int n1;
+	private int n1;
 
 	/**
 	 * largest index number of nodes in {@code g1}
 	 */
-	private final int maxn;
+	private int maxn;
 
 	/**
 	 * current node in {@code g1}
@@ -139,7 +139,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		maxn = findMaxNInQ();
 
 		coreLen = 0;
-		origCoreLen = 0;
+		// origCoreLen = 0;
 		t1bothLen = 0;
 		t1inLen = 0;
 		t1outLen = 0;
@@ -166,7 +166,66 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 	public boolean checkNegativeGraphIncremental(Graph<VQ, EQ> ngGraph) {
 		// merge ngGraph with p
+		IntSet overlap = new IntOpenHashSet(p.allVertices().keySet());
+		overlap.retainAll(ngGraph.allVertices().keySet());
+
+//		log.debug("before incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
+//		p.display(1000);
+		for (int vID : ngGraph.allVertices().keySet()) {
+			if (!p.contains(vID)) {
+				p.addVertex(ngGraph.getVertex(vID));
+			}
+		}
+
+		for (EQ e : ngGraph.allEdges()) {
+			if (!p.contains(e.from().getID(), e.to().getID())) {
+				p.addEdge(e);
+			}
+		}
+
+//		log.debug("after incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
+//		p.display(1000);
+
+		updatePatternRelatedStatusWithOverlapNodes(overlap);
+
+		// re-check the overlap nodes
+		for (int ru : overlap) {
+			if (!isFeasiblePair(ru, core1.get(ru))) {
+				log.info(ru + "-" + core1.get(ru));
+				return false;
+			}
+			confirmPair(ru, core1.get(ru));
+		}
+
+		n1 = p.vertexSize();
+		maxn = findMaxNInQ();
+		u = NULL_NODE;
+
 		return true;
+	}
+
+	private void updatePatternRelatedStatusWithOverlapNodes(IntSet overlap) {
+
+		for (int node1 : overlap) {
+			for (int other : p.getParents(node1)) {
+				if (!in1.containsKey(other)) {
+					in1.put(other, coreLen);
+					t1inLen++;
+					if (out1.containsKey(other))
+						t1bothLen++;
+				}
+			}
+
+			for (int other : p.getChildren(node1)) {
+				if (!out1.containsKey(other)) {
+					out1.put(other, coreLen);
+					t1outLen++;
+					if (in1.containsKey(other))
+						t1bothLen++;
+				}
+			}
+		}
+
 	}
 
 	private int findMaxNInQ() {
@@ -184,7 +243,42 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		p = copy.p;
 		g = copy.g;
 		coreLen = copy.coreLen;
-		origCoreLen = copy.origCoreLen;
+		// origCoreLen = copy.origCoreLen;
+		t1bothLen = copy.t1bothLen;
+		t2bothLen = copy.t2bothLen;
+		t1inLen = copy.t1inLen;
+		t2inLen = copy.t2inLen;
+		t1outLen = copy.t1outLen;
+		t2outLen = copy.t2outLen;
+		n1 = copy.n1;
+		n2 = copy.n2;
+
+		u = copy.u;
+		maxn = copy.maxn;
+
+		sn2 = copy.sn2;
+		sn2k = copy.sn2k;
+		m = copy.m;
+
+		// NOTE: we don't need to copy these arrays because their state restored
+		// via the backTrack() function after processing on the cloned state
+		// finishes
+		core1 = new Int2IntOpenHashMap(copy.core1);
+		core2 = new Int2IntOpenHashMap(copy.core2);
+		in1 = new Int2IntOpenHashMap(copy.in1);
+		in2 = new Int2IntOpenHashMap(copy.in2);
+		out1 = new Int2IntOpenHashMap(copy.out1);
+		out2 = new Int2IntOpenHashMap(copy.out2);
+	}
+
+	@SuppressWarnings("unchecked")
+	public State(State copy, Graph<VQ, EQ> ngGraph) {
+		quantifiers = copy.quantifiers;
+		checkQuantifiers = copy.checkQuantifiers;
+		p = copy.p.copy();
+		g = copy.g;
+		coreLen = copy.coreLen;
+		// origCoreLen = copy.origCoreLen;
 		t1bothLen = copy.t1bothLen;
 		t2bothLen = copy.t2bothLen;
 		t1inLen = copy.t1inLen;
@@ -356,6 +450,82 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		return termin1 <= termin2 && termout1 <= termout2 && new1 <= new2;
 	}
 
+	private void confirmPair(int node1, int node2) {
+
+		assert node1 < n1;
+		assert coreLen < n1;
+
+		if (!in1.containsKey(node1)) {
+			in1.put(node1, coreLen);
+			t1inLen++;
+			if (out1.containsKey(node1))
+				t1bothLen++;
+		}
+		if (!out1.containsKey(node1)) {
+			out1.put(node1, coreLen);
+			t1outLen++;
+			if (in1.containsKey(node1))
+				t1bothLen++;
+		}
+
+		if (!in2.containsKey(node2)) {
+			in2.put(node2, coreLen);
+			t2inLen++;
+			if (out2.containsKey(node2))
+				t2bothLen++;
+		}
+		if (!out2.containsKey(node2)) {
+			out2.put(node2, coreLen);
+			t2outLen++;
+			if (in2.containsKey(node2))
+				t2bothLen++;
+		}
+
+		for (int other : p.getParents(node1)) {
+			if (!in1.containsKey(other)) {
+				in1.put(other, coreLen);
+				t1inLen++;
+				if (out1.containsKey(other))
+					t1bothLen++;
+			}
+		}
+
+		for (int other : p.getChildren(node1)) {
+			if (!out1.containsKey(other)) {
+				out1.put(other, coreLen);
+				t1outLen++;
+				if (in1.containsKey(other))
+					t1bothLen++;
+			}
+		}
+
+		for (int other : g.getParents(node2)) {
+			if (!in2.containsKey(other)) {
+				in2.put(other, coreLen);
+				t2inLen++;
+				if (out2.containsKey(other))
+					t2bothLen++;
+			}
+			if (!sn2k.contains(other)) {
+				sn2k.add(other);
+				sn2.add(other);
+			}
+		}
+
+		for (int other : g.getChildren(node2)) {
+			if (!out2.containsKey(other)) {
+				out2.put(other, coreLen);
+				t2outLen++;
+				if (in2.containsKey(other))
+					t2bothLen++;
+			}
+			if (!sn2k.contains(other)) {
+				sn2k.add(other);
+				sn2.add(other);
+			}
+		}
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -456,7 +626,6 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	 */
 	public boolean isDead() {
 		if (core1.size() == 1 && checkQuantifiers) {
-			// check u and v with quantifiers.
 			return !areCompatableQuantifiers(u, core1.get(u));
 		} else
 			return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
@@ -498,6 +667,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 				u++;
 			}
 		}
+		// log.debug("current u = " + u);
 	}
 
 	/**
@@ -571,23 +741,35 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	}
 
 	private int getEdgeCount(int fromID, int edgeAttr) {
-		int ret = 0;
-		for (int toID : g.getChildren(fromID)) {
-			if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr) {
-				ret++;
+		int ret = m.getEdgeCount(fromID, edgeAttr);
+		if (ret == UNCHECKED) {
+			ret = 0;
+			for (int toID : g.getChildren(fromID)) {
+				if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr) {
+					ret++;
+				}
 			}
+			m.setEdgeCount(fromID, edgeAttr, ret);
+		} else {
+			log.info("HIT-edgeCount ret = " + ret);
 		}
 		// log.debug("edge count=" + ret);
 		return ret;
 	}
 
 	private int getEdgePatternCount(int fromID, int edgeAttr, int tnAttr) {
-		int ret = 0;
-		for (int toID : g.getChildren(fromID)) {
-			if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr
-					&& ((VertexOInt) g.getVertex(toID)).getAttr() == tnAttr) {
-				ret++;
+		int ret = m.getEdgePatternCount(fromID, edgeAttr, tnAttr);
+		if (ret == UNCHECKED) {
+			ret = 0;
+			for (int toID : g.getChildren(fromID)) {
+				if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr
+						&& ((VertexOInt) g.getVertex(toID)).getAttr() == tnAttr) {
+					ret++;
+				}
 			}
+			m.setEdgePatternCount(fromID, edgeAttr, tnAttr, ret);
+		} else {
+			log.info("HIT-edgePatternCount ret = " + ret);
 		}
 		return ret;
 	}

@@ -586,4 +586,10 @@ public class OrthogonalGraph<V extends OrthogonalVertex> implements Graph<V, Ort
 		return null;
 	}
 
+	@Override
+	public Graph<V, OrthogonalEdge> copy() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

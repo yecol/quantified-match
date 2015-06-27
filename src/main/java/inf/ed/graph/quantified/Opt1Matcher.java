@@ -49,6 +49,8 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	int v2;
 
 	List<Int2IntMap> matches;// matches of pi graph of pattern.
+	@SuppressWarnings("rawtypes")
+	List<State> positiveStates;// matches of pi graph of pattern.
 
 	Int2IntMap mapV2TypedEdgeCount;
 	QuantifierCheckMatrix m;
@@ -61,6 +63,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	/**
 	 * {@inheritDoc}
 	 */
+	@SuppressWarnings("rawtypes")
 	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
 
 		this.p = p;
@@ -70,6 +73,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
 		this.mapV2TypedEdgeCount = new Int2IntOpenHashMap();
 		this.matches = new ArrayList<Int2IntMap>();
+		this.positiveStates = new ArrayList<State>();
 		this.m = new QuantifierCheckMatrix(p);
 
 		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
@@ -92,16 +96,31 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 		return this.findMatchesWithState(queue, matches);
 	}
 
-	@SuppressWarnings("rawtypes")
-	private boolean findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph,
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph,
 			List<Int2IntMap> ngMatches) {
 
-		Queue<State> queue = new LinkedList<State>();
-		State initState = new State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
-				p.getQuantifiers(), m, flagCheckQuantifierInVF2Opt, false);
-		queue.add(initState);
+		System.out.println("nggraph:");
+		ngGraph.display(1000);
 
+		Queue<State> queue = new LinkedList<State>();
+
+		int i = 0;
+		for (State s : positiveStates) {
+			// if (i < 2) {
+			State sn = new State(s, ngGraph);
+			if (sn.checkNegativeGraphIncremental(ngGraph)) {
+				// log.info("add one.");
+				queue.add(sn);
+			} else {
+				// log.info("not add one.");
+			}
+			// i++;
+			// }
+		}
+		log.info("the result below is find negative matches.");
 		return this.findMatchesWithState(queue, ngMatches);
+		// return true;
 	}
 
 	/**
@@ -208,8 +227,8 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
 		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
 
-		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForOriginal()) {
-			findNegativeMathes(ngGraph, ngMatches);
+		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
+			findNegativeMatches(ngGraph, ngMatches);
 		}
 
 		for (Int2IntMap ngMatch : ngMatches) {
@@ -250,6 +269,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 			State s = q.poll();
 
 			if (s.isGoal()) {
+				positiveStates.add(s);
 				matches.add(s.getMatch());
 				continue;
 			}

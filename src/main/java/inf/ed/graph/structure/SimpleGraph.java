@@ -15,22 +15,32 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jgrapht.DirectedGraph;
+import org.jgrapht.Graphs;
 import org.jgrapht.graph.SimpleDirectedGraph;
 
 public class SimpleGraph<V extends Vertex, E extends Edge> implements Graph<V, E> {
 
 	private DirectedGraph<V, E> graph;
 	private VertexFactory<V> vertexFactory;
+	private SimpleEdgeFactory<V, E> edgeFactory;
 	private Map<Integer, V> vertices;
 	static Logger log = LogManager.getLogger(SimpleGraph.class);
 
 	public SimpleGraph(Class<V> vertexClass, Class<E> edgeClass) {
 		vertexFactory = new VertexFactory<V>(vertexClass);
-		SimpleEdgeFactory<V, E> ef = new SimpleEdgeFactory<V, E>(edgeClass);
-		graph = new SimpleDirectedGraph<V, E>(ef);
+		edgeFactory = new SimpleEdgeFactory<V, E>(edgeClass);
+		graph = new SimpleDirectedGraph<V, E>(edgeFactory);
+	}
+
+	public SimpleGraph(SimpleGraph<V, E> copy) {
+		vertexFactory = copy.vertexFactory;
+		edgeFactory = copy.edgeFactory;
+		graph = new SimpleDirectedGraph<V, E>(edgeFactory);
+		Graphs.addGraph(graph, copy.graph);
 	}
 
 	@Override
@@ -416,4 +426,9 @@ public class SimpleGraph<V extends Vertex, E extends Edge> implements Graph<V, E
 		return this.graph.getEdge(this.getVertex(fromID), this.getVertex(toID));
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Override
+	public Graph<V, E> copy() {
+		return new SimpleGraph(this);
+	}
 }
