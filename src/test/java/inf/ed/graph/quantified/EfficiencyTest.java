@@ -63,6 +63,7 @@ public class EfficiencyTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void opt1Test() {
 
@@ -86,6 +87,37 @@ public class EfficiencyTest {
 		for (int v : candidates) {
 			log.info("=OPT1===== current process " + v + "=======OPT1=");
 			Opt1Matcher<VertexOInt, OrthogonalEdge> inspector = new Opt1Matcher<VertexOInt, OrthogonalEdge>();
+			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
+			if (iso == true) {
+				yes.add(v);
+			}
+		}
+	}
+
+//	@Ignore
+	@Test
+	public void opt2Test() {
+
+		QuantifiedPattern pp = new QuantifiedPattern();
+		pp.loadPatternFromVEFile("dataset/test/q-pokec1");
+		// pp.display();
+
+		ArrayList<Integer> candidates = new ArrayList<Integer>();
+
+		// for (VertexOInt n : g.allVertices().values()) {
+		// if (n.getAttr() == 1) {
+		// candidates.add(n.getID());
+		// }
+		// }
+		candidates.add(76);
+
+		System.out.println("candidates size = " + candidates.size());
+
+		ArrayList<Integer> yes = new ArrayList<Integer>();
+
+		for (int v : candidates) {
+			log.info("=OPT1===== current process " + v + "=======OPT1=");
+			Opt2Matcher<VertexOInt, OrthogonalEdge> inspector = new Opt2Matcher<VertexOInt, OrthogonalEdge>();
 			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 			if (iso == true) {
 				yes.add(v);
