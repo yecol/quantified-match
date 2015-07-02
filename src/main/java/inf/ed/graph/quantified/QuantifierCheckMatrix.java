@@ -1,5 +1,8 @@
 package inf.ed.graph.quantified;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -9,6 +12,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 public class QuantifierCheckMatrix {
 
+	static Logger log = LogManager.getLogger(QuantifierCheckMatrix.class);
 	Int2ObjectMap<IntSet> checkedValid;
 	Int2ObjectMap<IntSet> checkedInvalid;
 

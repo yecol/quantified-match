@@ -43,7 +43,6 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	static Logger log = LogManager.getLogger(State.class);
 
 	public static final int NULL_NODE = -1;
-	public static final int NEW_N1 = -10001;
 
 	final private Map<String, Quantifier> quantifiers;
 
@@ -96,16 +95,13 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	private int maxn;
 
 	/**
-	 * current node in {@code g1}
-	 */
-	private int u;
-
-	/**
 	 * The number of nodes in {@code g2}
 	 */
 	private final int n2;
 
 	private int v1, v2;
+
+	private int prev2;
 
 	/**
 	 * Whether the algorithm needs to check for edge number constraints on the
@@ -153,12 +149,13 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		sn2 = new IntArrayList();
 		sn2k = new IntOpenHashSet();
 
-		u = v1;
 		sn2.add(v2);
 		sn2k.add(v2);
 
 		this.v1 = v1;
 		this.v2 = v2;
+
+		this.prev2 = NULL_NODE;
 
 		// this.addPair(v1, v2);
 	}
@@ -183,8 +180,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			}
 		}
 
-		// log.debug("after incremantal: v=" + p.vertexSize() + ", e=" +
-		// p.edgeSize());
+		// log.debug("info - display p");
 		// p.display(1000);
 
 		updatePatternRelatedStatusWithOverlapNodes(overlap);
@@ -200,7 +196,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		n1 = p.vertexSize();
 		maxn = findMaxNInQ();
-		u = NULL_NODE;
+		v1 = NULL_NODE;
+		prev2 = NULL_NODE;
+		moveToNextPair();
 
 		return true;
 	}
@@ -254,7 +252,6 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		n1 = copy.n1;
 		n2 = copy.n2;
 
-		u = copy.u;
 		maxn = copy.maxn;
 
 		sn2 = copy.sn2;
@@ -263,6 +260,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		v1 = copy.v1;
 		v2 = copy.v2;
+		prev2 = copy.prev2;
 
 		// NOTE: we don't need to copy these arrays because their state restored
 		// via the backTrack() function after processing on the cloned state
@@ -292,11 +290,11 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		n1 = copy.n1;
 		n2 = copy.n2;
 
-		u = copy.u;
 		maxn = copy.maxn;
 
 		v1 = copy.v1;
 		v2 = copy.v2;
+		prev2 = copy.v2;
 
 		sn2 = copy.sn2;
 		sn2k = copy.sn2k;
@@ -365,15 +363,16 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	}
 
 	public boolean isFeasibleCandidate() {
-		int node1 = v1;
-		int node2 = v2;
-		return isFeasiblePair(node1, node2);
+		if (v1 < maxn) {
+			return isFeasiblePair(v1, v2);
+		}
+		return false;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	private boolean isFeasiblePair(int node1, int node2) {
+	public boolean isFeasiblePair(int node1, int node2) {
 
 		assert node1 < n1;
 		assert !core1.containsKey(node1);
@@ -643,10 +642,10 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	 * {@inheritDoc}
 	 */
 	public boolean isDead() {
-		if (core1.size() == 1 && checkQuantifiers) {
-			return !areCompatableQuantifiers(u, core1.get(u));
-		} else
-			return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
+		// if (core1.size() == 1 && checkQuantifiers) {
+		// return !areCompatableQuantifiers(u, core1.get(u));
+		// } else
+		return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
 	}
 
 	/**
@@ -656,67 +655,46 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		return new State(this);
 	}
 
-	public void nextN1() {
-		if (u == NULL_NODE)
-			u = 0;
+	public void moveToNextPair() {
+
+		if (v1 == NULL_NODE) {
+			v1 = 0;
+		}
+
 		if (t1bothLen > coreLen && t2bothLen > coreLen) {
-			while (u < maxn
-					&& (core1.containsKey(u) || !out1.containsKey(u) || !in1.containsKey(u))) {
-				u++;
+			while (v1 < maxn
+					&& (core1.containsKey(v1) || !out1.containsKey(v1) || !in1.containsKey(v1))) {
+				v1++;
 			}
 		} else if (t1outLen > coreLen && t2outLen > coreLen) {
-			while (u < maxn && (core1.containsKey(u) || !out1.containsKey(u))) {
-				u++;
+			while (v1 < maxn && (core1.containsKey(v1) || !out1.containsKey(v1))) {
+				v1++;
 			}
 
 		} else if (t1inLen > coreLen && t2inLen > coreLen) {
-			while (u < maxn && (core1.containsKey(u) || !in1.containsKey(u))) {
-				u++;
+			while (v1 < maxn && (core1.containsKey(v1) || !in1.containsKey(v1))) {
+				v1++;
 			}
 		} else {
-			while (u < maxn && core1.containsKey(u)) {
-				u++;
-			}
-		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public Pair<Integer> nextPair(int x, int prevN2) {
-
-		if (x != NULL_NODE) {
-			// if x(n1) is not change, then only iterate n2.
-			if (prevN2 == NULL_NODE)
-				prevN2 = 0;
-
-			else {
-				prevN2 = sn2.indexOf(prevN2);
-				prevN2++;
-				while (prevN2 < sn2.size()
-						&& (core2.containsKey(sn2.get(prevN2)) || !out2
-								.containsKey(sn2.get(prevN2)))
-						&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)))) {
-					prevN2++;
-				}
+			while (v1 < maxn && core1.containsKey(v1)) {
+				v1++;
 			}
 		}
 
-		else {
-			// by calling nextN1, x will be overwrite to -1.
-			prevN2 = 0;
+		if (v1 < maxn) {
+			int prevN2 = 0;
 			if (t1bothLen > coreLen && t2bothLen > coreLen) {
 				while (prevN2 < sn2.size()
 						&& (core2.containsKey(sn2.get(prevN2))
 								|| !out2.containsKey(sn2.get(prevN2))
-								|| !in2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(u,
+								|| !in2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
 									sn2.get(prevN2)))) {
 					prevN2++;
 				}
 			} else if (t1outLen > coreLen && t2outLen > coreLen) {
 				while (prevN2 < sn2.size()
 						&& (core2.containsKey(sn2.get(prevN2))
-								|| !out2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(u,
+								|| !out2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
 									sn2.get(prevN2)))) {
 					prevN2++;
 				}
@@ -724,26 +702,54 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			} else if (t1inLen > coreLen && t2inLen > coreLen) {
 				while (prevN2 < sn2.size()
 						&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(
-								u, sn2.get(prevN2)))) {
+								v1, sn2.get(prevN2)))) {
 					prevN2++;
 				}
 			} else {
 				while (prevN2 < sn2.size()
-						&& (core2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(u,
+						&& (core2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
 								sn2.get(prevN2)))) {
 					prevN2++;
 				}
 			}
+
+			if (prevN2 < sn2.size()) {
+				v2 = sn2.get(prevN2);
+			}
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Pair<Integer> nextPair(int prevN2) {
+
+		// v1_ init = 0
+
+		// if x(n1) is not change, then only iterate n2.
+		if (prevN2 == NULL_NODE && v1 < maxn) {
+//			log.debug("prev2 = " + prev2 + ", v1=" + v1 + ", v2=" + v2);
+			return new Pair<Integer>(v1, v2);
 		}
 
-		if (u < maxn && prevN2 < sn2.size()) {
-			//
-			// log.debug("prevN1=" + u + " prevN2=" + prevN2 + ", realID," + u +
-			// ":" + sn2.get(prevN2));
-			return new Pair<Integer>(u, sn2.get(prevN2));
+		if (v1 < maxn) {
 
-		} else
-			return null;
+			prevN2 = sn2.indexOf(prevN2);
+			prevN2++;
+			while (prevN2 < sn2.size()
+					&& (core2.containsKey(sn2.get(prevN2)) || !out2.containsKey(sn2.get(prevN2)) || !areCompatableQuantifiers(
+							v1, sn2.get(prevN2)))
+					&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)) || !areCompatableQuantifiers(
+							v1, sn2.get(prevN2)))) {
+				prevN2++;
+			}
+
+			if (prevN2 < sn2.size()) {
+				v2 = sn2.get(prevN2);
+				return new Pair<Integer>(v1, v2);
+			}
+		}
+		return null;
 
 	}
 

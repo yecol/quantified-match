@@ -89,7 +89,7 @@ public class FunctionalTest {
 		assertEquals(false, inspector6.isIsomorphic(p2, 0, g, 3));
 
 	}
-	
+
 	@Test
 	public void BaselineISOTest() {
 
