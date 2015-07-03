@@ -44,10 +44,13 @@ public class EfficiencyTest {
 
 		// for (VertexOInt n : g.allVertices().values()) {
 		// if (n.getAttr() == 1) {
+		// // System.out.println(n.getID());
 		// candidates.add(n.getID());
 		// }
 		// }
 		candidates.add(76);
+		candidates.add(246287);
+		candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -78,6 +81,8 @@ public class EfficiencyTest {
 		// }
 		// }
 		candidates.add(76);
+		candidates.add(246287);
+		candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -91,5 +96,24 @@ public class EfficiencyTest {
 				yes.add(v);
 			}
 		}
+	}
+
+	@Test
+	public void multiThreadOptTest() {
+
+		QuantifiedPattern pp = new QuantifiedPattern();
+		pp.loadPatternFromVEFile("dataset/test/q-pokec1");
+
+		ArrayList<Integer> candidates = new ArrayList<Integer>();
+
+		candidates.add(76);
+		candidates.add(246287);
+		candidates.add(246388);
+
+		System.out.println("candidates size = " + candidates.size());
+
+		MtOptMatcher<VertexOInt, OrthogonalEdge> inspector = new MtOptMatcher<VertexOInt, OrthogonalEdge>(
+				pp, 0, g, candidates);
+		inspector.findIsomorphic();
 	}
 }

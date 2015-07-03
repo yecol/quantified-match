@@ -21,9 +21,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 /**
  * Optimisation: check quantifiers in VF2
  * 
@@ -32,9 +34,9 @@ import org.apache.logging.log4j.Logger;
  * @author yecol
  *
  */
-public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
+public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 
-	static Logger log = LogManager.getLogger(Opt1Matcher.class);
+	static Logger log = LogManager.getLogger(MtOptMatcher.class);
 
 	/* check quantifiers in VF2 optimisation flag */
 	static private final boolean flagCheckQuantifierInVF2Opt = true;
@@ -42,36 +44,100 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
 
-	int v1;
-	int v2;
+	ConcurrentLinkedQueue<Integer> candidates;
+	ConcurrentLinkedQueue<Integer> results;
 
-	@SuppressWarnings("rawtypes")
-	List<State> matches;// matches of pi graph of pattern.
-	// Int2IntMap mapV2TypedEdgeCount;
+	int du;// designate vertex in Q(g1)
+
+	int threadNumLimit = 0;
+	int threadTimeoutLimit = 0;
+
 	QuantifierCheckMatrix m;
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
-	public Opt1Matcher() {
+	public MtOptMatcher(QuantifiedPattern query, int du, Graph<VG, EG> graph,
+			List<Integer> candidates) {
+		this.p = query;
+		this.g = graph;
+
+		this.du = du;
+
+		this.results = new ConcurrentLinkedQueue<Integer>();
+		this.candidates = new ConcurrentLinkedQueue<Integer>();
+		this.candidates.addAll(candidates);
+	}
+
+	public Set<Integer> findIsomorphic() {
+
+		Set<Integer> isomorphics = new HashSet<Integer>();
+		m = new QuantifierCheckMatrix(p);
+
+		int threadNum;
+		if (this.threadNumLimit == 0) {
+			threadNum = Runtime.getRuntime().availableProcessors();
+		} else {
+			threadNum = Math.min(this.threadNumLimit, Runtime.getRuntime().availableProcessors());
+		}
+
+		List<Thread> threadsPool = new ArrayList<Thread>();
+
+		for (int i = 0; i < threadNum; i++) {
+			log.debug("Start working thread " + i);
+			WorkerThread workerThread = new WorkerThread();
+			workerThread.setName("SubVF2Th-" + i);
+			workerThread.start();
+			threadsPool.add(workerThread);
+		}
+
+		try {
+			for (Thread thread : threadsPool) {
+				thread.join();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		log.info(results.size());
+
+		isomorphics.addAll(results);
+		return isomorphics;
+	}
+
+	private class WorkerThread extends Thread {
+
+		@Override
+		public void run() {
+
+			try {
+				while (!candidates.isEmpty()) {
+					int can = candidates.poll();
+					// log.debug("current candidate is " + can);
+					if (isQuantifiedIsomorphic(can)) {
+						results.add(can);
+					}
+				}
+			} catch (RuntimeException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("rawtypes")
-	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
+	private boolean isQuantifiedIsomorphic(int cand) {
 
-		this.p = p;
-		this.g = g;
-		this.v1 = v1;
-		this.v2 = v2;
+		log.debug("begin to find");
 
-		// this.mapV2TypedEdgeCount = new Int2IntOpenHashMap();
-		this.matches = new ArrayList<State>();
-		this.m = new QuantifierCheckMatrix(p);
+		List<State> matches = new ArrayList<State>();
 
-		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
-				&& this.checkNegatives() && this.validateMatchesOfPi();
+		boolean valid = this.findMathesOfPI(cand, matches) && this.validateMatchesOfPi(matches)
+				&& this.checkNegatives(matches) && this.validateMatchesOfPi(matches);
 
 		log.info(printMatches(matches));
 		return valid;
@@ -87,19 +153,18 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private boolean findMathesOfPI() {
+	private boolean findMathesOfPI(int can, List<State> matches) {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
+		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), du, g, can,
 				p.getQuantifiers(), m, flagCheckQuantifierInVF2Opt, true);
 		queue.add(initState);
-
-		// checkAndCountTypedEdgeForPercentage(v1, v2);
 		return this.findMatchesWithState(queue, matches);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph, List<State> ngMatches) {
+	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph, List<State> matches,
+			List<State> ngMatches) {
 
 		System.out.println("nggraph:");
 		ngGraph.display(1000);
@@ -123,7 +188,8 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	 * 
 	 * @return true if need to continue.
 	 */
-	private boolean validateMatchesOfPi() {
+	@SuppressWarnings("rawtypes")
+	private boolean validateMatchesOfPi(List<State> matches) {
 
 		log.debug("before validate matches of Pi:" + matches.size());
 
@@ -136,7 +202,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 			for (int fu : p.getPI().getParents(u)) {
 				// current deal with edge fu->u in Q
 				Quantifier quantifier = p.getQuantifierWithEdge(fu, u);
-				boolean changedfv = this.filterMatches(fu, u, quantifier);
+				boolean changedfv = this.filterMatches(matches, fu, u, quantifier);
 				// if changed the count of fv (mapping of fu).
 				if ((checked.contains(fu) && changedfv) || !checked.contains(fu)) {
 					queue.add(fu);
@@ -163,10 +229,9 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	 * @return if filtered any v, returns true, else false;
 	 */
 	@SuppressWarnings("rawtypes")
-	private boolean filterMatches(int ufromID, int utoID, Quantifier quantifier) {
+	private boolean filterMatches(List<State> matches, int ufromID, int utoID, Quantifier quantifier) {
 
 		if (quantifier.isExistential()) {
-			// Do not need to filter anything.
 			return false;
 		}
 
@@ -220,14 +285,14 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private boolean checkNegatives() {
+	private boolean checkNegatives(List<State> matches) {
 
 		log.debug("before check negative:" + matches.size());
 
 		List<State> ngMatches = new LinkedList<State>();
 
 		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
-			findNegativeMatches(ngGraph, ngMatches);
+			findNegativeMatches(ngGraph, matches, ngMatches);
 		}
 
 		for (State ngMatchState : ngMatches) {
