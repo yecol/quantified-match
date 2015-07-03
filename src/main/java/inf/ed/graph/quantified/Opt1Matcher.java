@@ -270,9 +270,10 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
 		while (!q.isEmpty()) {
 
-			log.info("cur q.size = " + q.size());
-
 			State s = q.poll();
+
+			log.info("cur q.size = " + q.size());
+			log.info(s.toString());
 
 			if (s.isGoal()) {
 				matches.add(s);
@@ -293,6 +294,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 				if (s.isFeasiblePair(n1, n2)) {
 					State copy = s.copy();
 					copy.addPair(n1, n2);
+					log.info("q.add2bcheck::" + copy.toString());
 					q.add(copy);
 					// checkAndCountTypedEdgeForPercentage(n1, n2);
 				}

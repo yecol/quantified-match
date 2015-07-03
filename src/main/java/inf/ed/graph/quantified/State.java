@@ -169,8 +169,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		IntSet overlap = new IntOpenHashSet(p.allVertices().keySet());
 		overlap.retainAll(ngGraph.allVertices().keySet());
 
-//		log.debug("before incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
-//		p.display(1000);
+		// log.debug("before incremantal: v=" + p.vertexSize() + ", e=" +
+		// p.edgeSize());
+		// p.display(1000);
 		for (int vID : ngGraph.allVertices().keySet()) {
 			if (!p.contains(vID)) {
 				p.addVertex(ngGraph.getVertex(vID));
@@ -183,8 +184,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			}
 		}
 
-//		log.debug("after incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
-//		p.display(1000);
+		// log.debug("after incremantal: v=" + p.vertexSize() + ", e=" +
+		// p.edgeSize());
+		// p.display(1000);
 
 		updatePatternRelatedStatusWithOverlapNodes(overlap);
 
@@ -772,5 +774,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			log.info("HIT-edgePatternCount ret = " + ret);
 		}
 		return ret;
+	}
+
+	public String toString() {
+		return "state:: " + core1.toString();
 	}
 }

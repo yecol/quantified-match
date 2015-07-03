@@ -63,7 +63,7 @@ public class EfficiencyTest {
 		}
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void opt1Test() {
 

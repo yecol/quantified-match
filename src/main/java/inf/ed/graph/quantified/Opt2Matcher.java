@@ -308,10 +308,14 @@ public class Opt2Matcher<VG extends Vertex, EG extends Edge> {
 				while ((next = s.nextPair(n2)) != null) {
 					n1 = next.x;
 					n2 = next.y;
-					State2 copy = s.copy();
-					copy.addToBeCheckPair(n1, n2);
-					log.info("q.add2bcheck::" + copy.toString());
-					q.add(copy);
+					if (s.isCandidate(n1, n2)) {
+						State2 copy = s.copy();
+						copy.addToBeCheckPair(n1, n2);
+						log.info("q.add2bcheck::" + copy.toString());
+						q.add(copy);
+					} else {
+						log.debug("n1 and n2 not candidates:" + n1 + ", " + n2);
+					}
 				}
 			}
 		}

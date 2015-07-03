@@ -684,29 +684,24 @@ public class State2<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ex
 			if (t1bothLen > coreLen && t2bothLen > coreLen) {
 				while (prevN2 < sn2.size()
 						&& (core2.containsKey(sn2.get(prevN2))
-								|| !out2.containsKey(sn2.get(prevN2))
-								|| !in2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
-									sn2.get(prevN2)))) {
+								|| !out2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2
+								.get(prevN2)))) {
 					prevN2++;
 				}
 			} else if (t1outLen > coreLen && t2outLen > coreLen) {
 				while (prevN2 < sn2.size()
-						&& (core2.containsKey(sn2.get(prevN2))
-								|| !out2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
-									sn2.get(prevN2)))) {
+						&& (core2.containsKey(sn2.get(prevN2)) || !out2
+								.containsKey(sn2.get(prevN2)))) {
 					prevN2++;
 				}
 
 			} else if (t1inLen > coreLen && t2inLen > coreLen) {
 				while (prevN2 < sn2.size()
-						&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(
-								v1, sn2.get(prevN2)))) {
+						&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)))) {
 					prevN2++;
 				}
 			} else {
-				while (prevN2 < sn2.size()
-						&& (core2.containsKey(sn2.get(prevN2)) || !areCompatableVertices(v1,
-								sn2.get(prevN2)))) {
+				while (prevN2 < sn2.size() && (core2.containsKey(sn2.get(prevN2)))) {
 					prevN2++;
 				}
 			}
@@ -735,10 +730,8 @@ public class State2<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ex
 			prevN2 = sn2.indexOf(prevN2);
 			prevN2++;
 			while (prevN2 < sn2.size()
-					&& (core2.containsKey(sn2.get(prevN2)) || !out2.containsKey(sn2.get(prevN2)) || !areCompatableQuantifiers(
-							v1, sn2.get(prevN2)))
-					&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)) || !areCompatableQuantifiers(
-							v1, sn2.get(prevN2)))) {
+					&& (core2.containsKey(sn2.get(prevN2)) || !out2.containsKey(sn2.get(prevN2)))
+					&& (core2.containsKey(sn2.get(prevN2)) || !in2.containsKey(sn2.get(prevN2)))) {
 				prevN2++;
 			}
 
@@ -749,6 +742,16 @@ public class State2<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ex
 		}
 		return null;
 
+	}
+
+	public boolean isCandidate(int u, int v) {
+		if (!areCompatableVertices(u, v)) {
+			return false;
+		}
+		if (!areCompatableQuantifiers(u, v)) {
+			return false;
+		}
+		return true;
 	}
 
 	public Int2IntMap getMatch() {
