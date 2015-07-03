@@ -123,17 +123,17 @@ public class FunctionalTest {
 
 		System.out
 				.println("++++++++++++++++++ match tester for pattern #2 ++++++++++++++++++++++++++++++++");
-		Opt1Matcher<VertexOInt, OrthogonalEdge> inspector4 = new Opt1Matcher<VertexOInt, OrthogonalEdge>();
+		OptMatcher<VertexOInt, OrthogonalEdge> inspector4 = new OptMatcher<VertexOInt, OrthogonalEdge>();
 		System.out
 				.println("------------------ a single match, candidate = 1 in g1 ------------------------");
 		assertEquals(false, inspector4.isIsomorphic(p2, 0, g, 1));
 		System.out
 				.println("------------------ a single match, candidate = 2 in g1 ------------------------");
-		Opt1Matcher<VertexOInt, OrthogonalEdge> inspector5 = new Opt1Matcher<VertexOInt, OrthogonalEdge>();
+		OptMatcher<VertexOInt, OrthogonalEdge> inspector5 = new OptMatcher<VertexOInt, OrthogonalEdge>();
 		assertEquals(true, inspector5.isIsomorphic(p2, 0, g, 2));
 		System.out
 				.println("------------------ a single match, candidate = 3 in g1 ------------------------");
-		Opt1Matcher<VertexOInt, OrthogonalEdge> inspector6 = new Opt1Matcher<VertexOInt, OrthogonalEdge>();
+		OptMatcher<VertexOInt, OrthogonalEdge> inspector6 = new OptMatcher<VertexOInt, OrthogonalEdge>();
 		assertEquals(false, inspector6.isIsomorphic(p2, 0, g, 3));
 
 	}

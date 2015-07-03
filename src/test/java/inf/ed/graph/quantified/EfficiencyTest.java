@@ -90,7 +90,7 @@ public class EfficiencyTest {
 
 		for (int v : candidates) {
 			log.info("=OPT1===== current process " + v + "=======OPT1=");
-			Opt1Matcher<VertexOInt, OrthogonalEdge> inspector = new Opt1Matcher<VertexOInt, OrthogonalEdge>();
+			OptMatcher<VertexOInt, OrthogonalEdge> inspector = new OptMatcher<VertexOInt, OrthogonalEdge>();
 			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 			if (iso == true) {
 				yes.add(v);

@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
  * @author yecol
  *
  */
-public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
+public class OptMatcher<VG extends Vertex, EG extends Edge> {
 
-	static Logger log = LogManager.getLogger(Opt1Matcher.class);
+	static Logger log = LogManager.getLogger(OptMatcher.class);
 
 	/* check quantifiers in VF2 optimisation flag */
 	static private final boolean flagCheckQuantifierInVF2Opt = true;
@@ -52,7 +52,7 @@ public class Opt1Matcher<VG extends Vertex, EG extends Edge> {
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
-	public Opt1Matcher() {
+	public OptMatcher() {
 	}
 
 	/**
