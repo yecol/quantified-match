@@ -299,6 +299,18 @@ public class QueryGen {
 			}
 			Quantifier q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB,
 					percentUB);
+			int edgetype = getEdgeType(graph.getVertex(
+					Integer.parseInt(edge.substring(edge.indexOf('.') + 1))).getAttr());
+			if (edgetype == FRIEND_EDGE_LABEL) {
+				while (q.isPercentage()) {
+					q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB, percentUB);
+				}
+			} else {
+				while (q.isCount()) {
+					q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB, percentUB);
+				}
+			}
+
 			quantifiers.put(edge, q);
 		}
 
@@ -431,9 +443,9 @@ public class QueryGen {
 		QueryGen qg = new QueryGen("dataset/ptns/");
 		QueryGen.order = 4;
 		System.out.println("----------------------------------------------");
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < 10; i++) {
 			// qg.ranDAGWithProperties(4, 3, 8, 2, 3, 20, 80);
-			qg.ranStarWithProperties(3, 2, 3, 2, 2, 3, 20, 80);
+			qg.ranStarWithProperties(5, 2, 5, 2, 3, 3, 20, 80);
 		}
 		System.out.println("finished.");
 	}
