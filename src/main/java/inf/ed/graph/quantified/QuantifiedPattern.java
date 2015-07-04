@@ -256,7 +256,7 @@ public class QuantifiedPattern {
 
 		this.graph.loadGraphFromVEFile(filePath, true);
 
-		// mapU2PercentageEdgeType = new HashMap<Integer, Integer>();
+		mapU2PercentageEdgeType = new HashMap<Integer, Integer>();
 		FileInputStream fileInputStream = null;
 		Scanner sc = null;
 

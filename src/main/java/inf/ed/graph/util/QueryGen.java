@@ -289,9 +289,9 @@ public class QueryGen {
 	}
 
 	static public void main(String[] args) {
-		QueryGen qg = new QueryGen("dataset");
+		QueryGen qg = new QueryGen("dataset/ptns/");
 		System.out.println("----------------------------------------------");
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 10; i++) {
 			qg.ranDAGWithProperties(4, 3, 8, 2, 3, 20, 80);
 		}
 		System.out.println("finished.");

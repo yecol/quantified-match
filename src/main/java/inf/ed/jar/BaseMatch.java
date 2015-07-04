@@ -38,8 +38,15 @@ public class BaseMatch {
 	public static void main(String[] args) {
 
 		System.out.println("args: graphfilename, patterndir");
-		String graphFileName = args[0];
-		String patternDir = args[1];
+		String graphFileName, patternDir;
+
+		if (args.length < 2) {
+			graphFileName = "dataset/test/g1";
+			patternDir = "dataset/ptns";
+		} else {
+			graphFileName = args[0];
+			patternDir = args[1];
+		}
 
 		// load graph into memory.
 
@@ -48,25 +55,26 @@ public class BaseMatch {
 		Graph<VertexOInt, OrthogonalEdge> g = new OrthogonalGraph<VertexOInt>(VertexOInt.class);
 		g.loadGraphFromVEFile(graphFileName, false);
 
-		log.info("finish load graph, using" + (System.currentTimeMillis() - start) / 1000 + "s");
+		log.info("finish load graph, using " + (System.currentTimeMillis() - start) / 1000 + "s");
 		log.info("node_size = " + g.vertexSize() + ", edgesize =" + g.edgeSize()
 				+ ", using memory:" + Dev.currentRuntimeState());
 
 		/****************************************************************************/
 
-		File[] listOfFiles = new File(patternDir).listFiles();
+		File dir = new File(patternDir);
+		File[] listOfFiles = dir.listFiles();
 		int totalPattern = listOfFiles.length / 2;
 		int i = 0;
 		for (File f : listOfFiles) {
 			if (f.isFile() && f.getName().endsWith(".v")) {
 				i++;
-				String patternName = f.getName().split(".")[0];
+				String patternName = f.getName().substring(0, f.getName().length() - 2);
 				log.info("begin to process " + patternName + ", total = " + totalPattern
 						+ ", cur = " + i);
 
 				start = System.currentTimeMillis();
 				QuantifiedPattern pp = new QuantifiedPattern();
-				pp.loadPatternFromVEFile(patternName);
+				pp.loadPatternFromVEFile(patternDir + "/" + patternName);
 				pp.display();
 
 				ArrayList<Integer> candidates = findCandidates(g, pp.getGraph().getVertex(1)
