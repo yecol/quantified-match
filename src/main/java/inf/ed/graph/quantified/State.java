@@ -169,8 +169,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 		IntSet overlap = new IntOpenHashSet(p.allVertices().keySet());
 		overlap.retainAll(ngGraph.allVertices().keySet());
 
-//		log.debug("before incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
-//		p.display(1000);
+		// log.debug("before incremantal: v=" + p.vertexSize() + ", e=" +
+		// p.edgeSize());
+		// p.display(1000);
 		for (int vID : ngGraph.allVertices().keySet()) {
 			if (!p.contains(vID)) {
 				p.addVertex(ngGraph.getVertex(vID));
@@ -183,8 +184,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			}
 		}
 
-//		log.debug("after incremantal: v=" + p.vertexSize() + ", e=" + p.edgeSize());
-//		p.display(1000);
+		// log.debug("after incremantal: v=" + p.vertexSize() + ", e=" +
+		// p.edgeSize());
+		// p.display(1000);
 
 		updatePatternRelatedStatusWithOverlapNodes(overlap);
 
@@ -415,11 +417,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		// Check the 'out' edges of node2
 		for (int other2 : g.getChildren(node2)) {
-			if (core2.containsKey(other2)) {
-				int other1 = core2.get(other2);
-				if (!p.contains(node1, other1))
-					return false;
-			} else {
+			if (!core2.containsKey(other2)) {
 				if (in2.containsKey(other2))
 					termin2++;
 				if (out2.containsKey(other2))
@@ -431,13 +429,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		// Check the 'in' edges of node2
 		for (int other2 : g.getParents(node2)) {
-			if (core2.containsKey(other2)) {
-				int other1 = core2.get(other2);
-				if (!p.contains(other1, node1))
-					return false;
-			}
-
-			else {
+			if (!core2.containsKey(other2)) {
 				if (in2.containsKey(other2))
 					termin2++;
 				if (out2.containsKey(other2))
@@ -614,10 +606,10 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	 * {@inheritDoc}
 	 */
 	public boolean isGoal() {
-		// if (coreLen == n1) {
-		// log.debug("find a match");
-		// log.debug(core1.toString());
-		// }
+		if (coreLen == n1) {
+			log.debug("find a match");
+			log.debug(core1.toString());
+		}
 		return coreLen == n1;
 	}
 
@@ -724,8 +716,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		if (u < maxn && prevN2 < sn2.size()) {
 			//
-			// log.debug("prevN1=" + u + " prevN2=" + prevN2 + ", realID," + u +
-			// ":" + sn2.get(prevN2));
+			log.debug("prevN1=" + u + " prevN2=" + prevN2 + ", realID," + u + ":" + sn2.get(prevN2));
 			return new Pair<Integer>(u, sn2.get(prevN2));
 		} else
 			return null;
@@ -772,5 +763,9 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 			log.info("HIT-edgePatternCount ret = " + ret);
 		}
 		return ret;
+	}
+
+	public String toString() {
+		return this.core1.toString();
 	}
 }

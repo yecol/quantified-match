@@ -1,6 +1,9 @@
 package inf.ed.graph.quantified;
 
 import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+
 import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalEdge;
 import inf.ed.graph.structure.OrthogonalGraph;
@@ -17,6 +20,23 @@ public class FunctionalTest {
 	static Logger log = LogManager.getLogger(FunctionalTest.class);
 
 	static Graph<VertexOInt, OrthogonalEdge> g;
+
+	static private ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
+			int filterLabel) {
+		// begin label always = 1;
+		ArrayList<Integer> cands = new ArrayList<Integer>();
+		for (VertexOInt v : g.allVertices().values()) {
+			if (v.getAttr() == 1) {
+				for (VertexOInt child : g.getChildren(v)) {
+					if (child.getAttr() == filterLabel) {
+						cands.add(v.getID());
+						break;
+					}
+				}
+			}
+		}
+		return cands;
+	}
 
 	@BeforeClass
 	public static void prepareData() {
@@ -89,7 +109,8 @@ public class FunctionalTest {
 		assertEquals(false, inspector6.isIsomorphic(p2, 0, g, 3));
 
 	}
-	
+
+	@Ignore
 	@Test
 	public void BaselineISOTest() {
 
@@ -114,6 +135,7 @@ public class FunctionalTest {
 
 	}
 
+	@Ignore
 	@Test
 	public void OptFunctionalTest() {
 
@@ -135,6 +157,36 @@ public class FunctionalTest {
 				.println("------------------ a single match, candidate = 3 in g1 ------------------------");
 		OptMatcher<VertexOInt, OrthogonalEdge> inspector6 = new OptMatcher<VertexOInt, OrthogonalEdge>();
 		assertEquals(false, inspector6.isIsomorphic(p2, 0, g, 3));
+
+	}
+
+	@Test
+	public void BaselineISOTest2() {
+
+		Graph<VertexOInt, OrthogonalEdge> g = new OrthogonalGraph<VertexOInt>(VertexOInt.class);
+		g.loadGraphFromVEFile("dataset/test/g3", true);
+		g.display(1000);
+
+		QuantifiedPattern p1 = new QuantifiedPattern();
+		p1.loadPatternFromVEFile("dataset/test/q9");
+		p1.display();
+
+		ArrayList<Integer> candidates = findCandidates(g, p1.getGraph().getVertex(1).getAttr());
+
+		ArrayList<Integer> verified = new ArrayList<Integer>();
+
+		log.info("got all candidates " + candidates.size());
+
+		for (int v : candidates) {
+			System.out.println("current verify = " + v);
+			BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
+			boolean iso = inspector.isIsomorphic(p1, 0, g, v);
+			if (iso == true) {
+				verified.add(v);
+			}
+		}
+
+		log.info(" iso = " + verified.size());
 
 	}
 }

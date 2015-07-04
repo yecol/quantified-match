@@ -53,7 +53,7 @@ public class BaseMatch {
 		log.info("load graph from file:" + graphFileName);
 		long start = System.currentTimeMillis();
 		Graph<VertexOInt, OrthogonalEdge> g = new OrthogonalGraph<VertexOInt>(VertexOInt.class);
-		g.loadGraphFromVEFile(graphFileName, false);
+		g.loadGraphFromVEFile(graphFileName, true);
 
 		log.info("finish load graph, using " + (System.currentTimeMillis() - start) / 1000 + "s");
 		log.info("node_size = " + g.vertexSize() + ", edgesize =" + g.edgeSize()
@@ -90,9 +90,9 @@ public class BaseMatch {
 				int j = 0;
 				for (int v : candidates) {
 					j++;
-					if (j / 1000 == 0) {
+					if (j % 1000 == 0) {
 						log.info("processing pattern " + i + "/" + totalPattern + ", candidates "
-								+ j + "000/" + candidates.size());
+								+ j + "/" + candidates.size());
 					}
 					BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
 					boolean iso = inspector.isIsomorphic(pp, 0, g, v);

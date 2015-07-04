@@ -232,18 +232,21 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private boolean findMatchesWithState(Queue<State> q, List<Int2IntMap> matches) {
 
-		long start = System.currentTimeMillis();
+		// long start = System.currentTimeMillis();
 
 		while (!q.isEmpty()) {
 
 			State s = q.poll();
+			log.info(s.toString());
 
 			if (s.isGoal()) {
+				System.out.println("is goal");
 				matches.add(s.getMatch());
 				continue;
 			}
 
 			if (s.isDead()) {
+				System.out.println("dead");
 				continue;
 			}
 
@@ -254,6 +257,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			while ((next = s.nextPair(n1, n2)) != null) {
 				n1 = next.x;
 				n2 = next.y;
+				log.debug(n1 + " " + n2 + " " + s.isFeasiblePair(n1, n2));
 				if (s.isFeasiblePair(n1, n2)) {
 					State copy = s.copy();
 					copy.addPair(n1, n2);
@@ -261,13 +265,16 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 					checkAndCountTypedEdgeForPercentage(n1, n2);
 				}
 			}
+
+			log.info("q.size = " + q.size());
 		}
 
 		// log.info("================findMatchesWithState finished==================");
 		// log.info("this.mapV2TypedEdgeCount" +
 		// this.mapV2TypedEdgeCount.toString());
-		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start)
-				+ "ms, find = " + matches.size());
+		// log.info("enumerate all matches using:" + (System.currentTimeMillis()
+		// - start)
+		// + "ms, find = " + matches.size());
 		return !matches.isEmpty();
 	}
 

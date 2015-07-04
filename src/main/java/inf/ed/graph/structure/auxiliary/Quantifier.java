@@ -23,7 +23,7 @@ public class Quantifier {
 			// count
 			q.type = Type.COUNT;
 			q.value = 2 + r.nextInt(countBound - 2);
-			q.predict = prds[r.nextInt(3)];
+			q.predict = prds[r.nextInt(2)];
 		} else {
 			// percentage
 			q.type = Type.PERCENT;
