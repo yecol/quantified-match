@@ -14,6 +14,7 @@ import java.io.Serializable;
 public class VertexOInt extends OrthogonalVertex implements Serializable {
 
 	private static final long serialVersionUID = 1L;
+	boolean innerNode;
 	int attr;
 
 	public VertexOInt(int id) {
@@ -30,7 +31,11 @@ public class VertexOInt extends OrthogonalVertex implements Serializable {
 		String[] eles = line.split("\t");
 		this.id = Integer.parseInt(eles[0].trim());
 		this.attr = Integer.parseInt(eles[1].trim());
-
+		if (eles.length > 2 && Integer.parseInt(eles[2].trim()) == 1) {
+			this.innerNode = true;
+		} else {
+			this.innerNode = false;
+		}
 	}
 
 	public VertexOInt(int id, int attr) {
@@ -51,6 +56,10 @@ public class VertexOInt extends OrthogonalVertex implements Serializable {
 
 	public void setAttr(int attr) {
 		this.attr = attr;
+	}
+
+	public boolean isInnerNode() {
+		return innerNode;
 	}
 
 	@Override

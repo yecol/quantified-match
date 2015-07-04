@@ -64,8 +64,8 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
 				&& this.checkNegatives() && this.validateMatchesOfPi();
 
-		log.info("final matches results: size = " + matches.size());
-		log.debug(matches.toString());
+		// log.info("final matches results: size = " + matches.size());
+		// log.debug(matches.toString());
 		return valid;
 	}
 
@@ -100,7 +100,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	 */
 	private boolean validateMatchesOfPi() {
 
-		log.debug("before validate matches of Pi:" + matches.size());
+		int before = matches.size();
 
 		Set<Integer> checked = new HashSet<Integer>();
 		Queue<Integer> queue = new LinkedList<Integer>();
@@ -120,7 +120,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			checked.add(u);
 		}
 
-		log.debug("after validate matches of Pi:" + matches.size());
+		log.debug("validate matches of Pi (before/after): " + before + "/" + matches.size());
 
 		return !matches.isEmpty();
 	}
@@ -193,7 +193,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 	private boolean checkNegatives() {
 
-		log.debug("before check negative:" + matches.size());
+		int before = matches.size();
 
 		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
 
@@ -224,7 +224,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			}
 		}
 
-		log.debug("after check negatives:" + matches.size());
+		log.debug("validate negations (before/after): " + before + "/" + matches.size());
 
 		return !matches.isEmpty();
 	}
@@ -237,16 +237,16 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		while (!q.isEmpty()) {
 
 			State s = q.poll();
-			log.info(s.toString());
+			// log.info(s.toString());
 
 			if (s.isGoal()) {
-				System.out.println("is goal");
+				// System.out.println("is goal");
 				matches.add(s.getMatch());
 				continue;
 			}
 
 			if (s.isDead()) {
-				System.out.println("dead");
+				// System.out.println("dead");
 				continue;
 			}
 
@@ -257,7 +257,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			while ((next = s.nextPair(n1, n2)) != null) {
 				n1 = next.x;
 				n2 = next.y;
-				log.debug(n1 + " " + n2 + " " + s.isFeasiblePair(n1, n2));
+				// log.debug(n1 + " " + n2 + " " + s.isFeasiblePair(n1, n2));
 				if (s.isFeasiblePair(n1, n2)) {
 					State copy = s.copy();
 					copy.addPair(n1, n2);
@@ -266,7 +266,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 				}
 			}
 
-			log.info("q.size = " + q.size());
+			// log.info("q.size = " + q.size());
 		}
 
 		// log.info("================findMatchesWithState finished==================");

@@ -23,7 +23,7 @@ public class BaseMatch {
 		// begin label always = 1;
 		ArrayList<Integer> cands = new ArrayList<Integer>();
 		for (VertexOInt v : g.allVertices().values()) {
-			if (v.getAttr() == 1) {
+			if (v.getAttr() == 1 && v.isInnerNode()) {
 				for (VertexOInt child : g.getChildren(v)) {
 					if (child.getAttr() == filterLabel) {
 						cands.add(v.getID());

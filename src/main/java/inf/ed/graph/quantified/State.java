@@ -606,10 +606,10 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 	 * {@inheritDoc}
 	 */
 	public boolean isGoal() {
-		if (coreLen == n1) {
-			log.debug("find a match");
-			log.debug(core1.toString());
-		}
+//		if (coreLen == n1) {
+//			log.debug("find a match");
+//			log.debug(core1.toString());
+//		}
 		return coreLen == n1;
 	}
 
@@ -716,7 +716,7 @@ public class State<VQ extends Vertex, VG extends Vertex, EQ extends Edge, EG ext
 
 		if (u < maxn && prevN2 < sn2.size()) {
 			//
-			log.debug("prevN1=" + u + " prevN2=" + prevN2 + ", realID," + u + ":" + sn2.get(prevN2));
+//			log.debug("prevN1=" + u + " prevN2=" + prevN2 + ", realID," + u + ":" + sn2.get(prevN2));
 			return new Pair<Integer>(u, sn2.get(prevN2));
 		} else
 			return null;
