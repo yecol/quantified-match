@@ -8,7 +8,7 @@
 			<PatternLayout
 				pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1}-%L  - %msg%n" />
 		</Console>
-		<RollingFile name="trace-log" fileName="${log-path}/algo-trace.log"
+		<RollingFile name="trace-log" fileName="${log-path}/trace.log"
 			filePattern="${log-path}/grape-trace-%d{yyyy-MM-dd}.log"
 			immediateFlush="true">
 			<PatternLayout>
@@ -24,7 +24,6 @@
 	<Loggers>
 		<Root level="debug" additivity="false">
 			<appender-ref ref="trace-log" level="debug" />
-			<appender-ref ref="error-log" level="error" />
 			<appender-ref ref="console-log" level="debug" />
 		</Root>
 	</Loggers>

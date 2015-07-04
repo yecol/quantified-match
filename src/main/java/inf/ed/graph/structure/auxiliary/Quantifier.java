@@ -1,15 +1,43 @@
 package inf.ed.graph.structure.auxiliary;
 
+import java.util.Random;
+
 public class Quantifier {
 
 	public enum Type {
 		PERCENT, COUNT
 	}
 
+	private static String[] prds = { ">", ">=", "=" };
+
 	private Type type;
 	private String predict;
 	private int value;
 	private double pvalue;
+
+	public static Quantifier generateRanPositiveQuantifier(int countBound, int percentLowerBound,
+			int percentUpperBound) {
+		Quantifier q = new Quantifier();
+		Random r = new Random();
+		if (r.nextInt(2) == 0) {
+			// count
+			q.type = Type.COUNT;
+			q.value = 2 + r.nextInt(countBound - 2);
+			q.predict = prds[r.nextInt(3)];
+		} else {
+			// percentage
+			q.type = Type.PERCENT;
+			q.value = percentLowerBound + r.nextInt(percentUpperBound - percentLowerBound);
+			q.predict = prds[r.nextInt(2)];
+			q.pvalue = q.value * 1.0 / 100;
+		}
+
+		return q;
+	}
+
+	public Quantifier() {
+
+	}
 
 	public Quantifier(String predict, String valueString) {
 		this.predict = predict;
@@ -81,15 +109,12 @@ public class Quantifier {
 		}
 	}
 
-	public int getRequiredCount() {
-		if (!this.isNegation()) {
-			if (this.isCount()) {
-				return this.value;
-			} else {
-				return 1;
-			}
-		} else
-			return 0;
+	public String getReadableString() {
+		String ret = predict + "\t" + value;
+		if (type == Type.PERCENT) {
+			ret += "%";
+		}
+		return ret;
 	}
 
 	@Override
