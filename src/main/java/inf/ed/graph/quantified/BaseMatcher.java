@@ -262,6 +262,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 					State copy = s.copy();
 					copy.addPair(n1, n2);
 					q.add(copy);
+					if (q.size() % 1000 == 0) {
+						log.debug("cur q.size = " + q.size());
+					}
 					checkAndCountTypedEdgeForPercentage(n1, n2);
 				}
 			}

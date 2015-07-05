@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 public class BaseMatch {
 
 	static Logger log = LogManager.getLogger(BaseMatch.class);
+	static private final int candidateLimit = 50;
 
 	static private ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
 			int filterLabel) {
@@ -29,6 +30,9 @@ public class BaseMatch {
 						cands.add(v.getID());
 						break;
 					}
+				}
+				if (cands.size() > candidateLimit) {
+					break;
 				}
 			}
 		}

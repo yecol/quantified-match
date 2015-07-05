@@ -175,6 +175,19 @@ public class QueryGen {
 			}
 			Quantifier q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB,
 					percentUB);
+
+			int edgetype = getEdgeType(graph.getVertex(
+					Integer.parseInt(edge.substring(edge.indexOf('.') + 1))).getAttr());
+			if (edgetype == FRIEND_EDGE_LABEL) {
+				while (q.isPercentage()) {
+					q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB, percentUB);
+				}
+			} else {
+				while (q.isCount()) {
+					q = Quantifier.generateRanPositiveQuantifier(countBound, percentLB, percentUB);
+				}
+			}
+
 			quantifiers.put(edge, q);
 		}
 
@@ -182,7 +195,7 @@ public class QueryGen {
 		System.out.println(quantifiers.toString());
 		System.out.println(graph.getDiameter());
 		pid++;
-		String filename = graph.getDiameter() + "-" + pid + "-" + order;
+		String filename = graph.getDiameter() + "-d" + pid + "-" + order;
 
 		writeToFile(outputbase + "/" + filename, graph, quantifiers);
 
@@ -317,7 +330,7 @@ public class QueryGen {
 		graph.display(1000);
 		System.out.println(quantifiers.toString());
 		pid++;
-		String filename = radius + "-" + pid + "-" + order;
+		String filename = radius + "-s" + pid + "-" + order;
 
 		writeToFile(outputbase + "/" + filename, graph, quantifiers);
 
@@ -441,11 +454,23 @@ public class QueryGen {
 
 	static public void main(String[] args) {
 		QueryGen qg = new QueryGen("dataset/ptns/");
-		QueryGen.order = 4;
+		QueryGen.order = 3;
 		System.out.println("----------------------------------------------");
+
+		int vSize = 5;
+		int eSize = 4;
+		int property = 3;
+		int hop = 2;
+		int quantifiers = 3;
+		int countBound = 3;
+		int percentLB = 20;
+		int percentUP = 90;
+
 		for (int i = 0; i < 10; i++) {
-			// qg.ranDAGWithProperties(4, 3, 8, 2, 3, 20, 80);
-			qg.ranStarWithProperties(5, 2, 5, 2, 3, 3, 20, 80);
+//			qg.ranDAGWithProperties(vSize, property, eSize, quantifiers, countBound, percentLB,
+//					percentUP);
+			qg.ranStarWithProperties(vSize, property, eSize, hop, quantifiers, countBound,
+					percentLB, percentUP);
 		}
 		System.out.println("finished.");
 	}
