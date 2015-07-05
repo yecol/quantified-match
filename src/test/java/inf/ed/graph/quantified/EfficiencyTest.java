@@ -32,7 +32,7 @@ public class EfficiencyTest {
 		g.addEdge(fv, tv);
 	}
 
-	@Ignore
+	// @Ignore
 	@Test
 	public void baselineTest() {
 
@@ -98,6 +98,7 @@ public class EfficiencyTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void multiThreadOptTest() {
 

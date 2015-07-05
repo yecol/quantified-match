@@ -9,6 +9,7 @@ import inf.ed.graph.structure.adaptor.VertexInt;
 import inf.ed.graph.structure.auxiliary.Pair;
 import inf.ed.graph.structure.auxiliary.Quantifier;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -24,10 +25,9 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 /**
  * Optimisation: check quantifiers in VF2
- * 
- * 
  * 
  * @author yecol
  *
@@ -36,17 +36,13 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 
 	static Logger log = LogManager.getLogger(OptMatcher.class);
 
-	/* check quantifiers in VF2 optimisation flag */
-	static private final boolean flagCheckQuantifierInVF2Opt = true;
-
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
 
 	int v1;
 	int v2;
 
-	@SuppressWarnings("rawtypes")
-	List<State> matches;// matches of pi graph of pattern.
+	List<Int2IntMap> matches;// matches of pi graph of pattern.
 	// Int2IntMap mapV2TypedEdgeCount;
 	QuantifierCheckMatrix m;
 
@@ -58,7 +54,6 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	/**
 	 * {@inheritDoc}
 	 */
-	@SuppressWarnings("rawtypes")
 	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
 
 		this.p = p;
@@ -67,7 +62,7 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		this.v2 = v2;
 
 		// this.mapV2TypedEdgeCount = new Int2IntOpenHashMap();
-		this.matches = new ArrayList<State>();
+		this.matches = new ArrayList<Int2IntMap>();
 		this.m = new QuantifierCheckMatrix(p);
 
 		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
@@ -77,11 +72,10 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		return valid;
 	}
 
-	@SuppressWarnings("rawtypes")
-	private String printMatches(List<State> matches) {
+	private String printMatches(List<Int2IntMap> matches) {
 		String ret = "match results. size = " + matches.size() + "\n";
-		for (State s : matches) {
-			ret += s.getMatch().toString() + ", ";
+		for (Int2IntMap s : matches) {
+			ret += s.toString() + ", ";
 		}
 		return ret;
 	}
@@ -89,33 +83,27 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	@SuppressWarnings("rawtypes")
 	private boolean findMathesOfPI() {
 
-		Queue<State> queue = new LinkedList<State>();
-		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
-				p.getQuantifiers(), m, flagCheckQuantifierInVF2Opt, true);
-		queue.add(initState);
-
-		// checkAndCountTypedEdgeForPercentage(v1, v2);
-		return this.findMatchesWithState(queue, matches);
+		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2,
+				p.getQuantifiers(), m);
+		return this.match(initState, matches);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph, List<State> ngMatches) {
+	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph,
+			List<Int2IntMap> ngMatches, IntSet overlaps) {
 
 		System.out.println("nggraph:");
 		ngGraph.display(1000);
+		log.info(overlaps.toString());
 
-		Queue<State> queue = new LinkedList<State>();
-
-		for (State s : matches) {
+		for (Int2IntMap match : matches) {
 			// if (i < 2) {
-			State sn = new State(s, ngGraph);
-			if (sn.checkNegativeGraphIncremental(ngGraph)) {
-				queue.add(sn);
+			State sn = new State(ngGraph, g, p.getQuantifiers(), m, match, overlaps);
+			if (sn.needFurtherCheckNegationEdge()) {
+				this.match(sn, ngMatches);
 			}
 		}
-		log.info("default queue size = " + queue.size());
-		log.info("the result below is find negative matches.");
-		return this.findMatchesWithState(queue, ngMatches);
+		return !ngMatches.isEmpty();
 	}
 
 	/**
@@ -162,7 +150,6 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	 *            the expected valid quantifier
 	 * @return if filtered any v, returns true, else false;
 	 */
-	@SuppressWarnings("rawtypes")
 	private boolean filterMatches(int ufromID, int utoID, Quantifier quantifier) {
 
 		if (quantifier.isExistential()) {
@@ -171,8 +158,7 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		}
 
 		Int2ObjectMap<IntSet> aggregatedMatchesByFv = new Int2ObjectOpenHashMap<IntSet>();
-		for (State matchState : matches) {
-			Int2IntMap match = matchState.getMatch();
+		for (Int2IntMap match : matches) {
 			int fv = match.get(ufromID);
 			int tv = match.get(utoID);
 			IntSet maps = aggregatedMatchesByFv.getOrDefault(fv, new IntOpenHashSet());
@@ -209,9 +195,9 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 
 		}
 
-		Iterator<State> it = matches.iterator();
+		Iterator<Int2IntMap> it = matches.iterator();
 		while (it.hasNext()) {
-			if (removedTargetMapping.contains(it.next().getMatch().get(ufromID))) {
+			if (removedTargetMapping.contains(it.next().get(ufromID))) {
 				it.remove();
 			}
 		}
@@ -219,26 +205,36 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		return !removedTargetMapping.isEmpty();
 	}
 
-	@SuppressWarnings("rawtypes")
+	private IntSet getOverlapVertices(Graph<VertexInt, TypedEdge> ngGraph,
+			Graph<VertexInt, TypedEdge> pi) {
+		IntSet overlaps = new IntOpenHashSet();
+		for (int ngv : ngGraph.allVertices().keySet()) {
+			if (pi.contains(ngv)) {
+				overlaps.add(ngv);
+			}
+		}
+		return overlaps;
+	}
+
 	private boolean checkNegatives() {
 
 		log.debug("before check negative:" + matches.size());
 
-		List<State> ngMatches = new LinkedList<State>();
+		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
 
 		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
-			findNegativeMatches(ngGraph, ngMatches);
+			IntSet overlaps = getOverlapVertices(ngGraph, p.getPI());
+			findNegativeMatches(ngGraph, ngMatches, overlaps);
 		}
 
-		for (State ngMatchState : ngMatches) {
+		for (Int2IntMap ngMatch : ngMatches) {
 			// log.debug("current ngMatche = " + ngMatch.toString());
-			Int2IntMap ngMatch = ngMatchState.getMatch();
 			if (ngMatch.size() <= 1) {
 				log.error("!!!!!!!!!!!!!!!!error:ngMatch size should at least = 2.");
 			}
-			Iterator<State> it = matches.iterator();
+			Iterator<Int2IntMap> it = matches.iterator();
 			while (it.hasNext()) {
-				Int2IntMap pMatch = it.next().getMatch();
+				Int2IntMap pMatch = it.next();
 				boolean rm = true;
 				for (int ngKey : ngMatch.keySet()) {
 					if (pMatch.containsKey(ngKey) && pMatch.get(ngKey) != ngMatch.get(ngKey)) {
@@ -259,47 +255,41 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		return !matches.isEmpty();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private boolean findMatchesWithState(Queue<State> q, List<State> matches) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private boolean match(State s, List<Int2IntMap> matches) {
 
-		long start = System.currentTimeMillis();
+		if (s.isGoal()) {
 
-		while (!q.isEmpty()) {
+			// log.info("find a match:" + s.getMatch().size());
+			// log.info(s.getMatch().toString());
 
-			State s = q.poll();
+			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
+			matches.add(match);
 
-			if (s.isGoal()) {
-				matches.add(s);
-				continue;
-			}
+			return true;
 
-			if (s.isDead()) {
-				continue;
-			}
-
-			s.nextN1();
-
-			int n1 = NULL_NODE, n2 = NULL_NODE;
-			Pair<Integer> next = null;
-			while ((next = s.nextPair(n1, n2)) != null) {
-				n1 = next.x;
-				n2 = next.y;
-				if (s.isFeasiblePair(n1, n2)) {
-					State copy = s.copy();
-					copy.addPair(n1, n2);
-					q.add(copy);
-					// checkAndCountTypedEdgeForPercentage(n1, n2);
-				}
-			}
 		}
 
-		// log.info("================findMatchesWithState finished==================");
-		// log.info("this.mapV2TypedEdgeCount" +
-		// this.mapV2TypedEdgeCount.toString());
-		// log.info(m.toString());
+		if (s.isDead()) {
+			return false;
+		}
 
-		log.info("enumerate all matches using:" + (System.currentTimeMillis() - start)
-				+ "ms, find = " + matches.size());
-		return !matches.isEmpty();
+		int n1 = NULL_NODE, n2 = NULL_NODE;
+		Pair<Integer> next = null;
+		boolean found = false;
+		while ((next = s.nextPair(n1, n2)) != null) {
+			n1 = next.x;
+			n2 = next.y;
+			if (s.isFeasiblePair(n1, n2)) {
+				State copy = s.copy();
+				copy.addPair(n1, n2);
+				found = match(copy, matches);
+				// If we found a match, then don't bother backtracking as it
+				// would be wasted effort.
+				// if (!found)
+				copy.backTrack();
+			}
+		}
+		return found;
 	}
 }

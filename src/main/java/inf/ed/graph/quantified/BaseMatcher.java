@@ -72,13 +72,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	@SuppressWarnings("rawtypes")
 	private boolean findMathesOfPI() {
 
-		Queue<State> queue = new LinkedList<State>();
-		State initState = new State<VertexInt, VG, TypedEdge, EG>(p.getPI(), v1, g, v2,
-				p.getQuantifiers(), null, false, true);
-		queue.add(initState);
-
+		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2, null, null);
 		checkAndCountTypedEdgeForPercentage(v1, v2);
-		return this.findMatchesWithState(queue, matches);
+		return this.match(initState, matches);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -86,11 +82,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			List<Int2IntMap> ngMatches) {
 
 		Queue<State> queue = new LinkedList<State>();
-		State initState = new State<VertexInt, VG, TypedEdge, EG>(ngGraph, v1, g, v2,
-				p.getQuantifiers(), null, false, false);
-		queue.add(initState);
+		State initState = new State<VertexInt, TypedEdge, VG, EG>(ngGraph, v1, g, v2, null, null);
 
-		return this.findMatchesWithState(queue, ngMatches);
+		return this.match(initState, ngMatches);
 	}
 
 	/**
@@ -229,56 +223,41 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		return !matches.isEmpty();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private boolean findMatchesWithState(Queue<State> q, List<Int2IntMap> matches) {
+	private boolean match(State s, List<Int2IntMap> matches) {
 
-		// long start = System.currentTimeMillis();
+		if (s.isGoal()) {
 
-		while (!q.isEmpty()) {
+			// log.info("find a match:" + s.getMatch().size());
+			// log.info(s.getMatch().toString());
 
-			State s = q.poll();
-			// log.info(s.toString());
+			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
+			matches.add(match);
 
-			if (s.isGoal()) {
-				// System.out.println("is goal");
-				matches.add(s.getMatch());
-				continue;
-			}
+			return true;
 
-			if (s.isDead()) {
-				// System.out.println("dead");
-				continue;
-			}
-
-			s.nextN1();
-
-			int n1 = NULL_NODE, n2 = NULL_NODE;
-			Pair<Integer> next = null;
-			while ((next = s.nextPair(n1, n2)) != null) {
-				n1 = next.x;
-				n2 = next.y;
-				// log.debug(n1 + " " + n2 + " " + s.isFeasiblePair(n1, n2));
-				if (s.isFeasiblePair(n1, n2)) {
-					State copy = s.copy();
-					copy.addPair(n1, n2);
-					q.add(copy);
-					if (q.size() % 1000 == 0) {
-						log.debug("cur q.size = " + q.size());
-					}
-					checkAndCountTypedEdgeForPercentage(n1, n2);
-				}
-			}
-
-			// log.info("q.size = " + q.size());
 		}
 
-		// log.info("================findMatchesWithState finished==================");
-		// log.info("this.mapV2TypedEdgeCount" +
-		// this.mapV2TypedEdgeCount.toString());
-		// log.info("enumerate all matches using:" + (System.currentTimeMillis()
-		// - start)
-		// + "ms, find = " + matches.size());
-		return !matches.isEmpty();
+		if (s.isDead()) {
+			return false;
+		}
+
+		int n1 = NULL_NODE, n2 = NULL_NODE;
+		Pair<Integer> next = null;
+		boolean found = false;
+		while ((next = s.nextPair(n1, n2)) != null) {
+			n1 = next.x;
+			n2 = next.y;
+			if (s.isFeasiblePair(n1, n2)) {
+				State copy = s.copy();
+				copy.addPair(n1, n2);
+				found = match(copy, matches);
+				// If we found a match, then don't bother backtracking as it
+				// would be wasted effort.
+				// if (!found)
+				copy.backTrack();
+			}
+		}
+		return found;
 	}
 
 	private void checkAndCountTypedEdgeForPercentage(int n1, int n2) {

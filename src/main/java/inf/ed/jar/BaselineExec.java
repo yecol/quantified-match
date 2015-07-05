@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class BaseMatch {
+public class BaselineExec {
 
-	static Logger log = LogManager.getLogger(BaseMatch.class);
+	static Logger log = LogManager.getLogger(BaselineExec.class);
 	static private final int candidateLimit = 50;
 
 	static private ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
@@ -101,7 +101,10 @@ public class BaseMatch {
 					BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
 					boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 					if (iso == true) {
+						log.info("cand-" + v + " is a match.");
 						verified.add(v);
+					} else {
+						log.info("cand-" + v + " is not a match.");
 					}
 				}
 

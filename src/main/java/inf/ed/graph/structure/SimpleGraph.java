@@ -109,7 +109,6 @@ public class SimpleGraph<V extends Vertex, E extends Edge> implements Graph<V, E
 
 	@Override
 	public Set<Integer> getParents(int vertexID) {
-
 		Set<Integer> parents = new HashSet<Integer>();
 		for (E e : graph.incomingEdgesOf(this.allVertices().get(vertexID))) {
 			parents.add(e.from().getID());
