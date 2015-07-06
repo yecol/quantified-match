@@ -61,31 +61,31 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		this.mapU2RemovedVs = new Int2ObjectOpenHashMap<IntSet>();
 		this.matches = new ArrayList<Int2IntMap>();
 
-		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
-				&& this.checkNegatives() && this.validateMatchesOfPi();
+		this.findMathesOfPI();
+		this.validateMatchesOfPi();
+		this.checkNegatives();
+		this.validateMatchesOfPi();
 
-		// log.info("final matches results: size = " + matches.size());
-		// log.debug(matches.toString());
-		return valid;
+		log.info("final matches results: size = " + matches.size());
+		return !matches.isEmpty();
 	}
 
 	@SuppressWarnings("rawtypes")
-	private boolean findMathesOfPI() {
+	private void findMathesOfPI() {
 
-//		p.getPI().display(1000);
+		// p.getPI().display(1000);
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2, null, null);
 		checkAndCountTypedEdgeForPercentage(v1, v2);
-		return this.match(initState, matches);
+		this.match(initState, matches);
 	}
 
 	@SuppressWarnings("rawtypes")
-	private boolean findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph,
-			List<Int2IntMap> ngMatches) {
+	private void findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph, List<Int2IntMap> ngMatches) {
 
 		ngGraph.display(1000);
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(ngGraph, v1, g, v2, null, null);
-		return this.match(initState, ngMatches);
+		this.match(initState, ngMatches);
 	}
 
 	/**
@@ -93,10 +93,15 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	 * 
 	 * @return true if need to continue.
 	 */
-	private boolean validateMatchesOfPi() {
+	private void validateMatchesOfPi() {
+
+		if (matches.isEmpty()) {
+			log.debug("validate matches of Pi (before/after): 0/0");
+			return;
+		}
 
 		int before = matches.size();
-//		log.info(matches.toString());
+		// log.info(matches.toString());
 
 		Set<Integer> checked = new HashSet<Integer>();
 		Queue<Integer> queue = new LinkedList<Integer>();
@@ -117,7 +122,6 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		}
 
 		log.debug("validate matches of Pi (before/after): " + before + "/" + matches.size());
-		return !matches.isEmpty();
 	}
 
 	/**
@@ -185,7 +189,12 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		return !removedTargetMapping.isEmpty();
 	}
 
-	private boolean checkNegatives() {
+	private void checkNegatives() {
+
+		if (matches.isEmpty()) {
+			log.debug("validate negations (before/after): 0/0");
+			return;
+		}
 
 		int before = matches.size();
 
@@ -219,16 +228,13 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		}
 
 		log.debug("validate negations (before/after): " + before + "/" + matches.size());
-
-		return !matches.isEmpty();
 	}
 
 	private boolean match(State s, List<Int2IntMap> matches) {
 
 		if (s.isGoal()) {
 
-			// log.info("find a match:" + s.getMatch().size());
-			// log.info(s.getMatch().toString());
+			log.info("find a match:" + s.getMatch().toString());
 
 			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
 			matches.add(match);

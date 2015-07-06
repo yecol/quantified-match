@@ -159,7 +159,7 @@ public class FunctionalTest {
 
 	}
 
-	@Ignore
+	// @Ignore
 	@Test
 	public void BaselineISOTest() {
 

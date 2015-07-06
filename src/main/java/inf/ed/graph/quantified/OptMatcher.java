@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Set;
 
@@ -35,6 +36,8 @@ import org.apache.logging.log4j.Logger;
 public class OptMatcher<VG extends Vertex, EG extends Edge> {
 
 	static Logger log = LogManager.getLogger(OptMatcher.class);
+
+	static boolean enableCheckNegativeAheadOfQueue = false;
 
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
@@ -105,8 +108,9 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 
 			IntSet overlaps = getOverlapVertices(ngGraph, p.getPI());
 			int i = 0;
-			Iterator<Int2IntMap> it = matches.iterator();
+			ListIterator<Int2IntMap> it = matches.listIterator();
 			while (it.hasNext()) {
+
 				Int2IntMap match = it.next();
 				i++;
 				// if (i < 2) {
@@ -114,26 +118,53 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 						+ match.toString());
 				State sn = new State(ngGraph, g, p.getQuantifiers(), m, match, overlaps);
 				if (sn.needFurtherCheckNegationEdge() && this.matchOneAndStop(sn, ngMatches)) {
-					// checked as this match is a negative match.
-					Iterator<Int2IntMap> it2 = matches.iterator();
-					Int2IntMap otherMatch = it2.next();
-					boolean rm = true;
-					for (int ngKey : overlaps) {
-						if (!otherMatch.containsKey(ngKey)
-								|| otherMatch.get(ngKey) != match.get(ngKey)) {
-							// match and other match did not have the same key
-							// or different value.
-							rm = false;
-							break;
+					// avoid right-side re-computation.
+					if (enableCheckNegativeAheadOfQueue) {
+
+						ListIterator<Int2IntMap> it2 = matches.listIterator(it.nextIndex());
+						while (it2.hasNext()) {
+							Int2IntMap otherMatch = it2.next();
+							boolean rm = true;
+							for (int ngKey : overlaps) {
+								// if match and other have same key-mapping in
+								// all overlaps.
+								if (!otherMatch.containsKey(ngKey)
+										|| otherMatch.get(ngKey) != match.get(ngKey)) {
+									rm = false;
+									break;
+								}
+							}
+							if (rm) {
+								log.debug("remove ahead: " + otherMatch.toString());
+								it2.remove();
+							}
 						}
-					}
-					if (rm) {
-						System.out.println("remove!" + otherMatch.toString());
-						it2.remove();
 					}
 				}
 			}
+		}
 
+		for (Int2IntMap ngMatch : ngMatches) {
+			// log.debug("current ngMatche = " + ngMatch.toString());
+			if (ngMatch.size() <= 1) {
+				log.error("!!!!!!!!!!!!!!!!error:ngMatch size should at least = 2.");
+			}
+			Iterator<Int2IntMap> it = matches.iterator();
+			while (it.hasNext()) {
+				Int2IntMap pMatch = it.next();
+				boolean rm = true;
+				for (int ngKey : ngMatch.keySet()) {
+					if (pMatch.containsKey(ngKey) && pMatch.get(ngKey) != ngMatch.get(ngKey)) {
+						// pMatch and ngMatch have the same key but different
+						// mapping.
+						rm = false;
+						break;
+					}
+				}
+				if (rm) {
+					it.remove();
+				}
+			}
 		}
 		log.debug("after check negatives:" + matches.size());
 	}
@@ -250,14 +281,13 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		return overlaps;
 	}
 
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private boolean match(State s, List<Int2IntMap> matches) {
 
 		if (s.isGoal()) {
 
-			log.info("find a match:" + s.getMatch().size());
-			log.info(s.getMatch().toString());
+			// log.info("find a match:" + s.getMatch().size());
+			// log.info(s.getMatch().toString());
 
 			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
 			matches.add(match);
@@ -292,7 +322,6 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private boolean matchOneAndStop(State s, List<Int2IntMap> ngMatches) {
 		if (s.isGoal()) {
-			log.info("find one match and stop! " + s.getMatch());
 			Int2IntMap ngMatch = new Int2IntOpenHashMap(s.getMatch());
 			ngMatches.add(ngMatch);
 			return true;
