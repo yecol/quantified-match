@@ -116,7 +116,7 @@ public class FunctionalTest {
 
 	}
 
-	// @Ignore
+	@Ignore
 	@Test
 	public void basicISOTest() {
 
@@ -209,33 +209,36 @@ public class FunctionalTest {
 
 	}
 
-	@Test
-	public void BaselineISOTest2() {
-
-		Graph<VertexOInt, OrthogonalEdge> g = new OrthogonalGraph<VertexOInt>(VertexOInt.class);
-		g.loadGraphFromVEFile("dataset/test/g3", true);
-		g.display(1000);
-
-		QuantifiedPattern p1 = new QuantifiedPattern();
-		p1.loadPatternFromVEFile("dataset/test/q9");
-		p1.display();
-
-		ArrayList<Integer> candidates = findCandidates(g, p1.getGraph().getVertex(1).getAttr());
-
-		ArrayList<Integer> verified = new ArrayList<Integer>();
-
-		log.info("got all candidates " + candidates.size());
-
-		for (int v : candidates) {
-			System.out.println("current verify = " + v);
-			BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
-			boolean iso = inspector.isIsomorphic(p1, 0, g, v);
-			if (iso == true) {
-				verified.add(v);
-			}
-		}
-
-		log.info(" iso = " + verified.size());
-
-	}
+	// @Test
+	// public void BaselineISOTest2() {
+	//
+	// Graph<VertexOInt, OrthogonalEdge> g = new
+	// OrthogonalGraph<VertexOInt>(VertexOInt.class);
+	// g.loadGraphFromVEFile("dataset/test/g1", true);
+	// g.display(1000);
+	//
+	// QuantifiedPattern p1 = new QuantifiedPattern();
+	// p1.loadPatternFromVEFile("dataset/test/q9");
+	// p1.display();
+	//
+	// ArrayList<Integer> candidates = findCandidates(g,
+	// p1.getGraph().getVertex(1).getAttr());
+	//
+	// ArrayList<Integer> verified = new ArrayList<Integer>();
+	//
+	// log.info("got all candidates " + candidates.size());
+	//
+	// for (int v : candidates) {
+	// System.out.println("current verify = " + v);
+	// BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new
+	// BaseMatcher<VertexOInt, OrthogonalEdge>();
+	// boolean iso = inspector.isIsomorphic(p1, 0, g, v);
+	// if (iso == true) {
+	// verified.add(v);
+	// }
+	// }
+	//
+	// log.info(" iso = " + verified.size());
+	//
+	// }
 }

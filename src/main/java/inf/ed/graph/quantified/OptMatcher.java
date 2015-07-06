@@ -65,11 +65,13 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		this.matches = new ArrayList<Int2IntMap>();
 		this.m = new QuantifierCheckMatrix(p);
 
-		boolean valid = this.findMathesOfPI() && this.validateMatchesOfPi()
-				&& this.checkNegatives() && this.validateMatchesOfPi();
+		this.findMathesOfPI();
+		this.validateMatchesOfPi();
+		this.checkNegatives();
+		this.validateMatchesOfPi();
 
 		log.info(printMatches(matches));
-		return valid;
+		return !matches.isEmpty();
 	}
 
 	private String printMatches(List<Int2IntMap> matches) {
@@ -81,29 +83,59 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private boolean findMathesOfPI() {
+	private void findMathesOfPI() {
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2,
 				p.getQuantifiers(), m);
-		return this.match(initState, matches);
+		match(initState, matches);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private boolean findNegativeMatches(Graph<VertexInt, TypedEdge> ngGraph,
-			List<Int2IntMap> ngMatches, IntSet overlaps) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void checkNegatives() {
 
-		System.out.println("nggraph:");
-		ngGraph.display(1000);
-		log.info(overlaps.toString());
-
-		for (Int2IntMap match : matches) {
-			// if (i < 2) {
-			State sn = new State(ngGraph, g, p.getQuantifiers(), m, match, overlaps);
-			if (sn.needFurtherCheckNegationEdge()) {
-				this.match(sn, ngMatches);
-			}
+		if (matches.isEmpty()) {
+			return;
 		}
-		return !ngMatches.isEmpty();
+
+		log.debug("before check negative:" + matches.size());
+
+		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
+
+		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
+
+			IntSet overlaps = getOverlapVertices(ngGraph, p.getPI());
+			int i = 0;
+			Iterator<Int2IntMap> it = matches.iterator();
+			while (it.hasNext()) {
+				Int2IntMap match = it.next();
+				i++;
+				// if (i < 2) {
+				log.info("check negative for match-" + i + "/" + matches.size() + ","
+						+ match.toString());
+				State sn = new State(ngGraph, g, p.getQuantifiers(), m, match, overlaps);
+				if (sn.needFurtherCheckNegationEdge() && this.matchOneAndStop(sn, ngMatches)) {
+					// checked as this match is a negative match.
+					Iterator<Int2IntMap> it2 = matches.iterator();
+					Int2IntMap otherMatch = it2.next();
+					boolean rm = true;
+					for (int ngKey : overlaps) {
+						if (!otherMatch.containsKey(ngKey)
+								|| otherMatch.get(ngKey) != match.get(ngKey)) {
+							// match and other match did not have the same key
+							// or different value.
+							rm = false;
+							break;
+						}
+					}
+					if (rm) {
+						System.out.println("remove!" + otherMatch.toString());
+						it2.remove();
+					}
+				}
+			}
+
+		}
+		log.debug("after check negatives:" + matches.size());
 	}
 
 	/**
@@ -111,7 +143,11 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	 * 
 	 * @return true if need to continue.
 	 */
-	private boolean validateMatchesOfPi() {
+	private void validateMatchesOfPi() {
+
+		if (matches.isEmpty()) {
+			return;
+		}
 
 		log.debug("before validate matches of Pi:" + matches.size());
 
@@ -134,8 +170,6 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		}
 
 		log.debug("after validate matches of Pi:" + matches.size());
-
-		return !matches.isEmpty();
 	}
 
 	/**
@@ -216,52 +250,14 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		return overlaps;
 	}
 
-	private boolean checkNegatives() {
-
-		log.debug("before check negative:" + matches.size());
-
-		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
-
-		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
-			IntSet overlaps = getOverlapVertices(ngGraph, p.getPI());
-			findNegativeMatches(ngGraph, ngMatches, overlaps);
-		}
-
-		for (Int2IntMap ngMatch : ngMatches) {
-			// log.debug("current ngMatche = " + ngMatch.toString());
-			if (ngMatch.size() <= 1) {
-				log.error("!!!!!!!!!!!!!!!!error:ngMatch size should at least = 2.");
-			}
-			Iterator<Int2IntMap> it = matches.iterator();
-			while (it.hasNext()) {
-				Int2IntMap pMatch = it.next();
-				boolean rm = true;
-				for (int ngKey : ngMatch.keySet()) {
-					if (pMatch.containsKey(ngKey) && pMatch.get(ngKey) != ngMatch.get(ngKey)) {
-						// pMatch and ngMatch have the same key but different
-						// mapping.
-						rm = false;
-						break;
-					}
-				}
-				if (rm) {
-					it.remove();
-				}
-			}
-		}
-
-		log.debug("after check negatives:" + matches.size());
-
-		return !matches.isEmpty();
-	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private boolean match(State s, List<Int2IntMap> matches) {
 
 		if (s.isGoal()) {
 
-			// log.info("find a match:" + s.getMatch().size());
-			// log.info(s.getMatch().toString());
+			log.info("find a match:" + s.getMatch().size());
+			log.info(s.getMatch().toString());
 
 			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
 			matches.add(match);
@@ -288,6 +284,38 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 				// would be wasted effort.
 				// if (!found)
 				copy.backTrack();
+			}
+		}
+		return found;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private boolean matchOneAndStop(State s, List<Int2IntMap> ngMatches) {
+		if (s.isGoal()) {
+			log.info("find one match and stop! " + s.getMatch());
+			Int2IntMap ngMatch = new Int2IntOpenHashMap(s.getMatch());
+			ngMatches.add(ngMatch);
+			return true;
+		}
+
+		if (s.isDead()) {
+			return false;
+		}
+
+		int n1 = NULL_NODE, n2 = NULL_NODE;
+		Pair<Integer> next = null;
+		boolean found = false;
+		while (!found && (next = s.nextPair(n1, n2)) != null) {
+			n1 = next.x;
+			n2 = next.y;
+			if (s.isFeasiblePair(n1, n2)) {
+				State copy = s.copy();
+				copy.addPair(n1, n2);
+				found = matchOneAndStop(copy, ngMatches);
+				// If we found a match, then don't bother backtracking as it
+				// would be wasted effort.
+				if (!found)
+					copy.backTrack();
 			}
 		}
 		return found;

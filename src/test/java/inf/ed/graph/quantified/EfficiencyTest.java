@@ -26,7 +26,7 @@ public class EfficiencyTest {
 		g = new OrthogonalGraph<VertexOInt>(VertexOInt.class);
 		g.loadGraphFromVEFile(filePath, false);
 		VertexOInt fv = g.getVertex(15365);
-		VertexOInt tv = g.getVertex(2120004);
+		VertexOInt tv = g.getVertex(2120027);
 		g.addEdge(fv, tv);
 		fv = g.getVertex(5386);
 		g.addEdge(fv, tv);
@@ -49,8 +49,8 @@ public class EfficiencyTest {
 		// }
 		// }
 		candidates.add(76);
-		candidates.add(246287);
-		candidates.add(246388);
+		// candidates.add(246287);
+		// candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -81,8 +81,8 @@ public class EfficiencyTest {
 		// }
 		// }
 		candidates.add(76);
-		candidates.add(246287);
-		candidates.add(246388);
+		// candidates.add(246287);
+		// candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -108,8 +108,8 @@ public class EfficiencyTest {
 		ArrayList<Integer> candidates = new ArrayList<Integer>();
 
 		candidates.add(76);
-		candidates.add(246287);
-		candidates.add(246388);
+		// candidates.add(246287);
+		// candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
