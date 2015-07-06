@@ -52,6 +52,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	 */
 	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
 
+		long start = System.currentTimeMillis();
 		this.p = p;
 		this.g = g;
 		this.v1 = v1;
@@ -66,26 +67,36 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		this.checkNegatives();
 		this.validateMatchesOfPi();
 
-		log.info("final matches results: size = " + matches.size());
+		long time = System.currentTimeMillis() - start;
+
+		log.info("cand-" + v2 + " checked as " + !matches.isEmpty() + ", using " + time / 1000
+				+ "." + time % 1000 + "s, with size = " + matches.size());
 		return !matches.isEmpty();
 	}
 
 	@SuppressWarnings("rawtypes")
 	private void findMathesOfPI() {
 
-		// p.getPI().display(1000);
+		long start = System.currentTimeMillis();
+		p.getPI().display(1000);
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2, null, null);
 		checkAndCountTypedEdgeForPercentage(v1, v2);
 		this.match(initState, matches);
+		log.info("find matches of PI, size =" + matches.size() + ", using "
+				+ (System.currentTimeMillis() - start) / 1000 + "s.");
 	}
 
 	@SuppressWarnings("rawtypes")
 	private void findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph, List<Int2IntMap> ngMatches) {
 
+		long start = System.currentTimeMillis();
 		ngGraph.display(1000);
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(ngGraph, v1, g, v2, null, null);
 		this.match(initState, ngMatches);
+
+		log.info("find negative matches, size =" + matches.size() + ", using "
+				+ (System.currentTimeMillis() - start) / 1000 + "s.");
 	}
 
 	/**
@@ -96,7 +107,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	private void validateMatchesOfPi() {
 
 		if (matches.isEmpty()) {
-			log.debug("validate matches of Pi (before/after): 0/0");
+			log.debug("skip validate matches of Pi (before/after): 0/0");
 			return;
 		}
 
@@ -192,7 +203,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	private void checkNegatives() {
 
 		if (matches.isEmpty()) {
-			log.debug("validate negations (before/after): 0/0");
+			log.debug("skip validate negations (before/after): 0/0");
 			return;
 		}
 
@@ -234,7 +245,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 		if (s.isGoal()) {
 
-			log.info("find a match:" + s.getMatch().toString());
+			// log.info("find a match:" + s.getMatch().toString());
 
 			Int2IntMap match = new Int2IntOpenHashMap(s.getMatch());
 			matches.add(match);

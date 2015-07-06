@@ -59,6 +59,8 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	 */
 	public boolean isIsomorphic(QuantifiedPattern p, int v1, Graph<VG, EG> g, int v2) {
 
+		long start = System.currentTimeMillis();
+
 		this.p = p;
 		this.g = g;
 		this.v1 = v1;
@@ -73,24 +75,24 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		this.checkNegatives();
 		this.validateMatchesOfPi();
 
-		log.info(printMatches(matches));
-		return !matches.isEmpty();
-	}
+		long time = System.currentTimeMillis() - start;
 
-	private String printMatches(List<Int2IntMap> matches) {
-		String ret = "match results. size = " + matches.size() + "\n";
-		for (Int2IntMap s : matches) {
-			ret += s.toString() + ", ";
-		}
-		return ret;
+		log.info("cand-" + v2 + " checked as " + !matches.isEmpty() + ", using " + time / 1000
+				+ "." + time % 1000 + "s, with size = " + matches.size());
+		return !matches.isEmpty();
 	}
 
 	@SuppressWarnings("rawtypes")
 	private void findMathesOfPI() {
 
+		long start = System.currentTimeMillis();
+		p.getPI().display(1000);
+
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2,
 				p.getQuantifiers(), m);
 		match(initState, matches);
+		log.info("find matches of PI, size =" + matches.size() + ", using "
+				+ (System.currentTimeMillis() - start) / 1000 + "s.");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -100,6 +102,8 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 			return;
 		}
 
+		long start = System.currentTimeMillis();
+
 		log.debug("before check negative:" + matches.size());
 
 		List<Int2IntMap> ngMatches = new LinkedList<Int2IntMap>();
@@ -107,42 +111,24 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 		for (Graph<VertexInt, TypedEdge> ngGraph : p.getNegativeGraphsForIncremental()) {
 
 			IntSet overlaps = getOverlapVertices(ngGraph, p.getPI());
-			int i = 0;
 			ListIterator<Int2IntMap> it = matches.listIterator();
 			while (it.hasNext()) {
 
 				Int2IntMap match = it.next();
-				i++;
 				// if (i < 2) {
-				log.info("check negative for match-" + i + "/" + matches.size() + ","
-						+ match.toString());
+				// log.info("check negative for match-" + i + "/" +
+				// matches.size() + ","
+				// + match.toString());
 				State sn = new State(ngGraph, g, p.getQuantifiers(), m, match, overlaps);
-				if (sn.needFurtherCheckNegationEdge() && this.matchOneAndStop(sn, ngMatches)) {
+				if (sn.needFurtherCheckNegationEdge()) {
 					// avoid right-side re-computation.
-					if (enableCheckNegativeAheadOfQueue) {
-
-						ListIterator<Int2IntMap> it2 = matches.listIterator(it.nextIndex());
-						while (it2.hasNext()) {
-							Int2IntMap otherMatch = it2.next();
-							boolean rm = true;
-							for (int ngKey : overlaps) {
-								// if match and other have same key-mapping in
-								// all overlaps.
-								if (!otherMatch.containsKey(ngKey)
-										|| otherMatch.get(ngKey) != match.get(ngKey)) {
-									rm = false;
-									break;
-								}
-							}
-							if (rm) {
-								log.debug("remove ahead: " + otherMatch.toString());
-								it2.remove();
-							}
-						}
-					}
+					this.matchOneAndStop(sn, ngMatches);
 				}
 			}
 		}
+
+		log.info("find negative matches, size =" + matches.size() + ", using "
+				+ (System.currentTimeMillis() - start) / 1000 + "s.");
 
 		for (Int2IntMap ngMatch : ngMatches) {
 			// log.debug("current ngMatche = " + ngMatch.toString());
@@ -166,7 +152,7 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 				}
 			}
 		}
-		log.debug("after check negatives:" + matches.size());
+
 	}
 
 	/**
