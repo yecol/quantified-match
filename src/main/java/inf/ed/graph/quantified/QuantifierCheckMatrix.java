@@ -34,6 +34,7 @@ public class QuantifierCheckMatrix {
 	}
 
 	public void checkedAndInvalid(int u, int v) {
+		// System.out.println("u and v = " + u + "," + v);
 		this.checkedInvalid.get(u).add(v);
 	}
 

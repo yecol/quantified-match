@@ -12,7 +12,8 @@ import java.util.Vector;
 
 public class PokecQueryGen {
 
-	private Vector<Integer> properties;
+	private Vector<Integer> lowProperties;
+	private Vector<Integer> midProperties;
 	private static int pid = 0;
 
 	private static final int PERSON_NODE_LABEL = 1;
@@ -22,7 +23,7 @@ public class PokecQueryGen {
 	static String outputbase;
 
 	public PokecQueryGen() {
-		loadProperties("dataset/pokec_freqedge_1");
+		loadProperties("dataset/pokec_freqedge_low_count", "dataset/pokec_freqedge_middle_count");
 	}
 
 	public int getEdgeType(int nodeID) {
@@ -32,20 +33,30 @@ public class PokecQueryGen {
 		return nodeID / 10000 - 200;
 	}
 
-	public void loadProperties(String filename) {
-		properties = new Vector<Integer>();
+	public void loadProperties(String lfilename, String mfilename) {
+		lowProperties = new Vector<Integer>();
+		midProperties = new Vector<Integer>();
 		Scanner scanner;
 		try {
-			scanner = new Scanner(new File(filename));
+			scanner = new Scanner(new File(lfilename));
 			while (scanner.hasNextInt()) {
-				properties.add(scanner.nextInt());
+				lowProperties.add(scanner.nextInt());
 			}
+			scanner.close();
+
+			scanner = new Scanner(new File(mfilename));
+			while (scanner.hasNextInt()) {
+				midProperties.add(scanner.nextInt());
+			}
+			scanner.close();
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println(properties.toString());
-		System.out.println("load properties.size =" + properties.size());
+		System.out.println(lowProperties.toString());
+		System.out.println("load low - properties.size =" + lowProperties.size());
+		System.out.println(midProperties.toString());
+		System.out.println("load mid - properties.size =" + midProperties.size());
 	}
 
 	public void randomizeAPattern(String filenamebase, int countBound, int percentL, int percentU) {
@@ -60,7 +71,7 @@ public class PokecQueryGen {
 		PrintWriter writer;
 		Map<Integer, Integer> records = new HashMap<Integer, Integer>();
 		try {
-			
+
 			System.out.println(inputfile);
 
 			// process vertex file, replace A with attribute.
@@ -69,9 +80,22 @@ public class PokecQueryGen {
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine();
 				if (line.contains("X")) {
-					int prop = properties.elementAt(r.nextInt(properties.size()));
-					line = line.replace("X", String.valueOf(prop));
+
 					int vid = Integer.parseInt(line.substring(0, line.indexOf("\t")));
+					int prop;
+					if (vid == 1 || vid == 2) {
+						prop = lowProperties.elementAt(r.nextInt(lowProperties.size()));
+						while (records.values().contains(prop)) {
+							prop = lowProperties.elementAt(r.nextInt(lowProperties.size()));
+						}
+					} else {
+						prop = midProperties.elementAt(r.nextInt(midProperties.size()));
+						while (records.values().contains(prop)) {
+							prop = midProperties.elementAt(r.nextInt(midProperties.size()));
+						}
+					}
+					line = line.replace("X", String.valueOf(prop));
+
 					records.put(vid, prop);
 				}
 				writer.println(line);
@@ -102,7 +126,7 @@ public class PokecQueryGen {
 				}
 				writer.println(fromID + "\t" + toID + "\t" + getEdgeType(toLabel) + "\t" + pred
 						+ "\t" + value);
-//				System.out.println(fromID);
+				// System.out.println(fromID);
 			}
 			scanner.close();
 			writer.flush();
@@ -120,7 +144,7 @@ public class PokecQueryGen {
 
 		patternTemplateDir = "dataset/ptns/template";
 		outputbase = "dataset/ptns/gen";
-		int genRound = 5;
+		int genRound = 4;
 		int countBound = 25;
 		int percentL = 60;
 		int percentU = 80;

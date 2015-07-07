@@ -37,7 +37,7 @@ public class EfficiencyTest {
 	public void baselineTest() {
 
 		QuantifiedPattern pp = new QuantifiedPattern();
-		pp.loadPatternFromVEFile("dataset/test/q-pokec1");
+		pp.loadPatternFromVEFile("dataset/test/q-pokec2");
 		// pp.display();
 
 		ArrayList<Integer> candidates = new ArrayList<Integer>();
@@ -67,6 +67,40 @@ public class EfficiencyTest {
 	}
 
 	@Test
+	public void quanCheckTest() {
+
+		QuantifiedPattern pp = new QuantifiedPattern();
+		pp.loadPatternFromVEFile("dataset/test/q-pokec2");
+		// pp.display();
+
+		ArrayList<Integer> candidates = new ArrayList<Integer>();
+
+		// for (VertexOInt n : g.allVertices().values()) {
+		// if (n.getAttr() == 1) {
+		// // System.out.println(n.getID());
+		// candidates.add(n.getID());
+		// }
+		// }
+		candidates.add(76);
+		// candidates.add(246287);
+		// candidates.add(246388);
+
+		System.out.println("candidates size = " + candidates.size());
+
+		ArrayList<Integer> yes = new ArrayList<Integer>();
+
+		for (int v : candidates) {
+			log.info("=QUANCHECK===== current process " + v + "======QUANCHECK=");
+			QuanCheckMatcher<VertexOInt, OrthogonalEdge> inspector = new QuanCheckMatcher<VertexOInt, OrthogonalEdge>();
+			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
+			if (iso == true) {
+				yes.add(v);
+			}
+		}
+	}
+
+	// @Ignore
+	@Test
 	public void opt1Test() {
 
 		QuantifiedPattern pp = new QuantifiedPattern();
@@ -81,8 +115,8 @@ public class EfficiencyTest {
 		// }
 		// }
 		candidates.add(76);
-		// candidates.add(246287);
-		// candidates.add(246388);
+		candidates.add(246287);
+		candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -98,7 +132,7 @@ public class EfficiencyTest {
 		}
 	}
 
-	@Ignore
+	// @Ignore
 	@Test
 	public void multiThreadOptTest() {
 
@@ -108,8 +142,8 @@ public class EfficiencyTest {
 		ArrayList<Integer> candidates = new ArrayList<Integer>();
 
 		candidates.add(76);
-		// candidates.add(246287);
-		// candidates.add(246388);
+		candidates.add(246287);
+		candidates.add(246388);
 
 		System.out.println("candidates size = " + candidates.size());
 

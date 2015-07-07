@@ -27,9 +27,9 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class BaseMatcher<VG extends Vertex, EG extends Edge> {
+public class QuanCheckMatcher<VG extends Vertex, EG extends Edge> {
 
-	static Logger log = LogManager.getLogger(BaseMatcher.class);
+	static Logger log = LogManager.getLogger(QuanCheckMatcher.class);
 
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
@@ -39,12 +39,12 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 
 	List<Int2IntMap> matches;// matches of pi graph of pattern.
 
-	Int2IntMap mapV2TypedEdgeCount;
 	Int2ObjectMap<IntSet> mapU2RemovedVs;
+	QuantifierCheckMatrix m;
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
 
-	public BaseMatcher() {
+	public QuanCheckMatcher() {
 	}
 
 	/**
@@ -58,9 +58,9 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		this.v1 = v1;
 		this.v2 = v2;
 
-		this.mapV2TypedEdgeCount = new Int2IntOpenHashMap();
 		this.mapU2RemovedVs = new Int2ObjectOpenHashMap<IntSet>();
 		this.matches = new ArrayList<Int2IntMap>();
+		this.m = new QuantifierCheckMatrix(p);
 
 		this.findMathesOfPI();
 		this.validateMatchesOfPi();
@@ -80,8 +80,8 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		long start = System.currentTimeMillis();
 		p.getPI().display(1000);
 
-		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2, null, null);
-		checkAndCountTypedEdgeForPercentage(v1, v2);
+		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2,
+				p.getQuantifiers(), m);
 		this.match(initState, matches);
 		log.info("find matches of PI, size =" + matches.size() + ", using "
 				+ (System.currentTimeMillis() - start) / 1000 + "s.");
@@ -170,9 +170,10 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 		IntSet removedTargetMapping = new IntOpenHashSet();
 
 		if (quantifier.isPercentage()) {
+			int edgeAttr = p.getGraph().getEdge(ufromID, utoID).getAttr();
 			for (int fv : aggregatedMatchesByFv.keySet()) {
 				if (!quantifier.isValid(aggregatedMatchesByFv.get(fv).size(),
-						mapV2TypedEdgeCount.get(fv))) {
+						m.getEdgeCount(fv, edgeAttr))) {
 					// remove fv;
 					// log.debug(quantifier.toString() +
 					// " not valid percentage, remove uFromID="
@@ -279,22 +280,5 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 			}
 		}
 		return found;
-	}
-
-	private void checkAndCountTypedEdgeForPercentage(int n1, int n2) {
-		if (p.getMapU2PercentageEdgeType().containsKey(n1)
-				&& !this.mapV2TypedEdgeCount.containsKey(n2)) {
-			// n2 has typed edge with percentage and not checked
-			// before.
-			int typedEdgeCount = 0;
-			int attr = p.getMapU2PercentageEdgeType().get(n1);
-			// TODO:make get children more efficient
-			for (int target : g.getChildren(n2)) {
-				// TODO: make this generic
-				if (((OrthogonalEdge) g.getEdge(n2, target)).getAttr() == attr)
-					typedEdgeCount++;
-			}
-			this.mapV2TypedEdgeCount.put(n2, typedEdgeCount);
-		}
 	}
 }

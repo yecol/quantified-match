@@ -515,7 +515,13 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 	 * {@inheritDoc}
 	 */
 	public boolean isDead() {
-		return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
+		if (core1.size() == 1 && checkQuantifiers) {
+			int u = core1.keySet().toIntArray()[0];
+			System.out.println("check u = " + u);
+			return !areCompatableQuantifiers(u, core1.get(u));
+		} else {
+			return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
+		}
 	}
 
 	/**
@@ -680,11 +686,12 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 		for (int v1 : posMatch.keySet()) {
 			if (nq.allVertices().containsKey(v1)) {
 				if (!overlaps.contains(v1) || beginN == v1) {
-//					log.debug("1. add existing pair: v1=" + v1 + ", v2=" + posMatch.get(v1));
+					// log.debug("1. add existing pair: v1=" + v1 + ", v2=" +
+					// posMatch.get(v1));
 					addPair(v1, posMatch.get(v1));
-//					log.debug("sn2=" + sn2.toString());
-//					log.debug("sn2k=" + sn2k.toString());
-//					log.debug("added=" + addedSeenNode2.toString());
+					// log.debug("sn2=" + sn2.toString());
+					// log.debug("sn2k=" + sn2k.toString());
+					// log.debug("added=" + addedSeenNode2.toString());
 				}
 			}
 		}
@@ -694,7 +701,8 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 			if (ov1 != beginN) {
 				int ov2 = posMatch.get(ov1);
 				if (isFeasiblePair(ov1, ov2)) {
-//					log.debug("2. add existing pair: n1=" + ov1 + ", n2=" + ov2);
+					// log.debug("2. add existing pair: n1=" + ov1 + ", n2=" +
+					// ov2);
 					addPair(ov1, ov2);
 					// log.debug("sn2=" + sn2.toString());
 					// log.debug("sn2k=" + sn2k.toString());

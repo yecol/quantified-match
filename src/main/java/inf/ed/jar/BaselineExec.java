@@ -18,6 +18,7 @@ public class BaselineExec {
 
 	static Logger log = LogManager.getLogger(BaselineExec.class);
 	static private int candidateLimit = 0;
+	static private int secondsLimit = 0;
 
 	static private ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
 			int filterLabel1, int filterLabel2) {
@@ -51,17 +52,19 @@ public class BaselineExec {
 
 	public static void main(String[] args) {
 
-		System.out.println("args: graphfilename, patterndir, candidate-limit");
+		System.out.println("args: graphfilename, patterndir, candidate-limit, time-limit");
 		String graphFileName, patternDir;
 
 		if (args.length < 2) {
 			graphFileName = "dataset/test/g1";
 			patternDir = "dataset/ptns";
 			candidateLimit = 50;
+			secondsLimit = 100;
 		} else {
 			graphFileName = args[0];
 			patternDir = args[1];
 			candidateLimit = Integer.parseInt(args[2]);
+			secondsLimit = Integer.parseInt(args[3]);
 		}
 
 		// load graph into memory.
@@ -85,10 +88,9 @@ public class BaselineExec {
 			if (f.isFile() && f.getName().endsWith(".v")) {
 				i++;
 				String patternName = f.getName().substring(0, f.getName().length() - 2);
-				log.info("begin to process " + patternName + ", total = " + totalPattern
+				log.info("-stat- begin to process " + patternName + ", total = " + totalPattern
 						+ ", cur = " + i);
 
-				start = System.currentTimeMillis();
 				QuantifiedPattern pp = new QuantifiedPattern();
 				pp.loadPatternFromVEFile(patternDir + "/" + patternName);
 				pp.display();
@@ -98,17 +100,27 @@ public class BaselineExec {
 
 				ArrayList<Integer> verified = new ArrayList<Integer>();
 
-				log.info("-stat- got all candidates using " + (System.currentTimeMillis() - start)
-						/ 1000 + "s, size = " + candidates.size());
+				long getCandidatesTime = (System.currentTimeMillis() - start) / 1000;
 
-				long start2 = System.currentTimeMillis();
+				log.info("-stat- got all candidates using " + getCandidatesTime / 1000
+						+ "s, size = " + candidates.size());
+
+				start = System.currentTimeMillis();
 
 				int j = 0;
 				for (int v : candidates) {
-					j++;
+
 					if (candidateLimit != 0 && j >= candidateLimit) {
 						break;
 					}
+					long currentUsingTime = (System.currentTimeMillis() - start) / 1000;
+
+					if (currentUsingTime > secondsLimit) {
+						break;
+					}
+
+					j++;
+
 					BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
 					boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 					if (iso == true) {
@@ -119,11 +131,13 @@ public class BaselineExec {
 					}
 				}
 
-				long usetime = System.currentTimeMillis() - start2;
+				long usetime = System.currentTimeMillis() - start;
+				double estTime = usetime * (candidates.size() * 1.0 / j);
 
 				log.info("-stat- " + "pattern " + patternName + " verified = " + verified.size()
 						+ ", check candidates = " + j + "/" + candidates.size() + ", using time = "
-						+ usetime / 1000 + "." + usetime % 1000 + "s");
+						+ usetime / 1000 + "." + usetime % 1000 + "s, est.Time =" + estTime / 1000
+						+ "s.");
 			}
 		}
 
