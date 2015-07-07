@@ -11,8 +11,13 @@ public class KeyGen {
 	public static String getTypedEdgeKey(int from, int to, int attr) {
 		return from + "-" + attr + "-" + to;
 	}
-	
 
-	
-	
+	public static boolean isYagoAttrTypeOnly(int attr) {
+		return attr < 50 && attr >= 10;
+	}
+
+	public static int getYagoKey(int attr) {
+		return attr / 10000000;
+	}
+
 }

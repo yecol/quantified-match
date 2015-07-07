@@ -1,6 +1,7 @@
 package inf.ed.graph.structure.adaptor;
 
 import inf.ed.graph.structure.Vertex;
+import inf.ed.graph.structure.auxiliary.KeyGen;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -49,7 +50,11 @@ public class VertexInt implements Vertex, Serializable {
 			return this.attr == o.attr;
 		} else if (other instanceof VertexOInt) {
 			VertexOInt o = (VertexOInt) other;
-			return this.attr == o.attr;
+			if (KeyGen.isYagoAttrTypeOnly(this.attr)) {
+				return this.attr == KeyGen.getYagoKey(o.getAttr());
+			} else {
+				return this.attr == o.attr;
+			}
 		}
 		throw new IllegalArgumentException("Unmatchable");
 	}
