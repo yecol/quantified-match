@@ -40,9 +40,6 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 
 	static Logger log = LogManager.getLogger(MtOptMatcher.class);
 
-	/* check quantifiers in VF2 optimisation flag */
-	static private final boolean flagCheckQuantifierInVF2Opt = true;
-
 	QuantifiedPattern p;
 	Graph<VG, EG> g;
 
@@ -52,9 +49,37 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 	int du;// designate vertex in Q(g1)
 
 	int threadNumLimit = 0;
-	int threadTimeoutLimit = 0;
+	int timeoutLimit = 0;
+	int candidateLimit = 0;
+
+	boolean running = true;
+	int originalSize = 0;
+	long startTime = 0;
 
 	/* node v in G -> count of edge with u in Q, which u~>v */
+
+	synchronized void checkContinue() {
+		if (((System.currentTimeMillis() - startTime) / 1000 > timeoutLimit)
+				|| (originalSize - candidates.size() > candidateLimit)) {
+			running = false;
+		}
+	}
+
+	public void setTimeout(int limit) {
+		timeoutLimit = limit;
+	}
+
+	public void setCandidateLimit(int limit) {
+		candidateLimit = limit;
+	}
+
+	public void setThreadNumber(int limit) {
+		threadNumLimit = limit;
+	}
+
+	public int getCheckedSize() {
+		return originalSize - candidates.size();
+	}
 
 	public MtOptMatcher(QuantifiedPattern query, int du, Graph<VG, EG> graph,
 			List<Integer> candidates) {
@@ -66,9 +91,14 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 		this.results = new ConcurrentLinkedQueue<Integer>();
 		this.candidates = new ConcurrentLinkedQueue<Integer>();
 		this.candidates.addAll(candidates);
+		this.originalSize = this.candidates.size();
+		this.candidateLimit = this.candidates.size();
+		this.timeoutLimit = Integer.MAX_VALUE;
 	}
 
 	public Set<Integer> findIsomorphic() {
+
+		startTime = System.currentTimeMillis();
 
 		Set<Integer> isomorphics = new HashSet<Integer>();
 		// m = new QuantifierCheckMatrix(p);
@@ -110,12 +140,17 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 		public void run() {
 
 			try {
-				while (!candidates.isEmpty()) {
+				while (running && !candidates.isEmpty()) {
 					int can = candidates.poll();
 					// log.debug("current candidate is " + can);
 					if (isQuantifiedIsomorphic(can)) {
+						log.info("cand-" + can + " is a match.");
 						results.add(can);
 					}
+					else{
+						log.info("cand-" + can + " is not a match.");
+					}
+					checkContinue();
 				}
 			} catch (RuntimeException e) {
 				e.printStackTrace();

@@ -1,5 +1,6 @@
 package inf.ed.jar;
 
+import inf.ed.graph.quantified.OptMatcher;
 import inf.ed.graph.quantified.QuanCheckMatcher;
 import inf.ed.graph.quantified.QuantifiedPattern;
 import inf.ed.graph.structure.Graph;
@@ -14,9 +15,9 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class QuanCheckExec {
+public class QMatchExec {
 
-	static Logger log = LogManager.getLogger(QuanCheckExec.class);
+	static Logger log = LogManager.getLogger(QMatchExec.class);
 	static private int candidateLimit = 0;
 	static private int secondsLimit = 0;
 
@@ -134,7 +135,7 @@ public class QuanCheckExec {
 
 					j++;
 
-					QuanCheckMatcher<VertexOInt, OrthogonalEdge> inspector = new QuanCheckMatcher<VertexOInt, OrthogonalEdge>();
+					OptMatcher<VertexOInt, OrthogonalEdge> inspector = new OptMatcher<VertexOInt, OrthogonalEdge>();
 					boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 					if (iso == true) {
 						log.info("cand-" + v + " is a match.");

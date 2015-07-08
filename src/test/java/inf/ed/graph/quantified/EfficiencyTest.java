@@ -32,7 +32,7 @@ public class EfficiencyTest {
 		g.addEdge(fv, tv);
 	}
 
-	// @Ignore
+	@Ignore
 	@Test
 	public void baselineTest() {
 
@@ -149,6 +149,8 @@ public class EfficiencyTest {
 
 		MtOptMatcher<VertexOInt, OrthogonalEdge> inspector = new MtOptMatcher<VertexOInt, OrthogonalEdge>(
 				pp, 0, g, candidates);
+		inspector.setCandidateLimit(1);
+		inspector.setTimeout(1);
 		inspector.findIsomorphic();
 	}
 }

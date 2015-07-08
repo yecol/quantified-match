@@ -1,6 +1,6 @@
 package inf.ed.jar;
 
-import inf.ed.graph.quantified.QuanCheckMatcher;
+import inf.ed.graph.quantified.MtOptMatcher;
 import inf.ed.graph.quantified.QuantifiedPattern;
 import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalEdge;
@@ -10,15 +10,17 @@ import inf.ed.graph.util.Dev;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class QuanCheckExec {
+public class DQMatchExec {
 
-	static Logger log = LogManager.getLogger(QuanCheckExec.class);
+	static Logger log = LogManager.getLogger(DQMatchExec.class);
 	static private int candidateLimit = 0;
 	static private int secondsLimit = 0;
+	static private int threadLimit = 0;
 
 	static public int getLabelOfBeginNode(int attr) {
 		if (attr < 100000000) {
@@ -66,7 +68,8 @@ public class QuanCheckExec {
 
 	public static void main(String[] args) {
 
-		System.out.println("args: graphfilename, patterndir, candidate-limit, time-limit");
+		System.out
+				.println("args: graphfilename, patterndir, candidate-limit, time-limit, thread-limit");
 		String graphFileName, patternDir;
 
 		if (args.length < 2) {
@@ -79,6 +82,7 @@ public class QuanCheckExec {
 			patternDir = args[1];
 			candidateLimit = Integer.parseInt(args[2]);
 			secondsLimit = Integer.parseInt(args[3]);
+			threadLimit = Integer.parseInt(args[4]);
 		}
 
 		// load graph into memory.
@@ -111,8 +115,6 @@ public class QuanCheckExec {
 
 				ArrayList<Integer> candidates = findCandidates(g, pp);
 
-				ArrayList<Integer> verified = new ArrayList<Integer>();
-
 				long getCandidatesTime = (System.currentTimeMillis() - start) / 1000;
 
 				log.info("-stat- got all candidates using " + getCandidatesTime / 1000
@@ -120,37 +122,20 @@ public class QuanCheckExec {
 
 				start = System.currentTimeMillis();
 
-				int j = 0;
-				for (int v : candidates) {
-
-					if (candidateLimit != 0 && j >= candidateLimit) {
-						break;
-					}
-					long currentUsingTime = (System.currentTimeMillis() - start) / 1000;
-
-					if (currentUsingTime > secondsLimit) {
-						break;
-					}
-
-					j++;
-
-					QuanCheckMatcher<VertexOInt, OrthogonalEdge> inspector = new QuanCheckMatcher<VertexOInt, OrthogonalEdge>();
-					boolean iso = inspector.isIsomorphic(pp, 0, g, v);
-					if (iso == true) {
-						log.info("cand-" + v + " is a match.");
-						verified.add(v);
-					} else {
-						log.info("cand-" + v + " is not a match.");
-					}
-				}
+				MtOptMatcher<VertexOInt, OrthogonalEdge> inspector = new MtOptMatcher<VertexOInt, OrthogonalEdge>(
+						pp, 0, g, candidates);
+				inspector.setCandidateLimit(candidateLimit);
+				inspector.setTimeout(secondsLimit);
+				inspector.setThreadNumber(threadLimit);
+				Set<Integer> verified = inspector.findIsomorphic();
 
 				long usetime = System.currentTimeMillis() - start;
-				double estTime = usetime * (candidates.size() * 1.0 / j);
+				double estTime = usetime * (candidates.size() * 1.0 / inspector.getCheckedSize());
 
 				log.info("-stat- " + "pattern " + patternName + " verified = " + verified.size()
-						+ ", check candidates = " + j + "/" + candidates.size() + ", using time = "
-						+ usetime / 1000 + "." + usetime % 1000 + "s, est.Time =" + estTime / 1000
-						+ "s.");
+						+ ", check candidates = " + inspector.getCheckedSize() + "/"
+						+ candidates.size() + ", using time = " + usetime / 1000 + "." + usetime
+						% 1000 + "s, est.Time =" + estTime / 1000 + "s.");
 			}
 		}
 
