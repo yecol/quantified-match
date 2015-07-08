@@ -78,7 +78,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	private void findMathesOfPI() {
 
 		long start = System.currentTimeMillis();
-		p.getPI().display(1000);
+		// p.getPI().display(1000);
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2, null, null);
 		checkAndCountTypedEdgeForPercentage(v1, v2);
@@ -91,7 +91,7 @@ public class BaseMatcher<VG extends Vertex, EG extends Edge> {
 	private void findNegativeMathes(Graph<VertexInt, TypedEdge> ngGraph, List<Int2IntMap> ngMatches) {
 
 		long start = System.currentTimeMillis();
-		ngGraph.display(1000);
+		// ngGraph.display(1000);
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(ngGraph, v1, g, v2, null, null);
 		this.match(initState, ngMatches);
 

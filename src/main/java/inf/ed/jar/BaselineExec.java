@@ -6,6 +6,7 @@ import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalEdge;
 import inf.ed.graph.structure.OrthogonalGraph;
 import inf.ed.graph.structure.adaptor.VertexOInt;
+import inf.ed.graph.structure.auxiliary.KeyGen;
 import inf.ed.graph.util.Dev;
 
 import java.io.File;
@@ -20,31 +21,45 @@ public class BaselineExec {
 	static private int candidateLimit = 0;
 	static private int secondsLimit = 0;
 
-	static private ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
-			int filterLabel1, int filterLabel2) {
-		// begin label always = 1;
+	static public int getLabelOfBeginNode(int attr) {
+		if (attr < 100000000) {
+			// pokec others
+			return attr;
+		} else {
+			return attr / 10000000;
+		}
+	}
+
+	static public ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
+			QuantifiedPattern p) {
 		ArrayList<Integer> cands = new ArrayList<Integer>();
-		for (VertexOInt v : g.allVertices().values()) {
-			boolean hasChildLabel1 = false;
-			boolean hasChildLabel2 = false;
-			if (v.getAttr() == 1 && v.isInnerNode()) {
-				for (VertexOInt child : g.getChildren(v)) {
-					if (child.getAttr() == filterLabel1) {
+		for (int vid : g.allVertices().keySet()) {
+			if (g.getVertex(vid).isInnerNode()
+					&& getLabelOfBeginNode(g.getVertex(vid).getAttr()) == p.getGraph().getVertex(0)
+							.getAttr()) {
+
+				boolean hasChildLabel1 = false;
+				boolean hasChildLabel2 = false;
+
+				for (int cid : g.getChildren(vid)) {
+					if (!hasChildLabel1 && p.getGraph().getVertex(1).match(g.getVertex(cid))) {
 						hasChildLabel1 = true;
 						if (hasChildLabel1 && hasChildLabel2) {
 							break;
 						}
 					}
-					if (child.getAttr() == filterLabel2) {
+					if (!hasChildLabel2 && p.getGraph().getVertex(2).match(g.getVertex(cid))) {
 						hasChildLabel2 = true;
 						if (hasChildLabel1 && hasChildLabel2) {
 							break;
 						}
 					}
 				}
+
 				if (hasChildLabel1 && hasChildLabel2) {
-					cands.add(v.getID());
+					cands.add(vid);
 				}
+
 			}
 		}
 		return cands;
@@ -95,8 +110,7 @@ public class BaselineExec {
 				pp.loadPatternFromVEFile(patternDir + "/" + patternName);
 				pp.display();
 
-				ArrayList<Integer> candidates = findCandidates(g, pp.getGraph().getVertex(1)
-						.getAttr(), pp.getGraph().getVertex(2).getAttr());
+				ArrayList<Integer> candidates = findCandidates(g, pp);
 
 				ArrayList<Integer> verified = new ArrayList<Integer>();
 

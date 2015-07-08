@@ -33,10 +33,10 @@ public class YagoEfficiencyTest {
 	public void baselineTest() {
 
 		QuantifiedPattern pp = new QuantifiedPattern();
-		pp.loadPatternFromVEFile("dataset/test/q-yago1");
+		pp.loadPatternFromVEFile("dataset/test/q-yago2");
 		// pp.display();
 
-		ArrayList<Integer> candidates = this.getCandidate(pp.getGraph().getVertex(0).getAttr());
+		ArrayList<Integer> candidates = this.getCandidate(pp);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -46,10 +46,13 @@ public class YagoEfficiencyTest {
 
 		for (int v : candidates) {
 			i++;
-			if (i > 100000) {
+			if (i % 1000 == 0) {
+				System.out.println("processed i=" + i + "/" + candidates.size());
+			}
+			if (i > 3000) {
 				break;
 			}
-			log.info("=BASE===== current process " + v + "======BASE=");
+			log.info("=BASE===== current process" + " " + v + "======BASE=");
 			BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
 			boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 			if (iso == true) {
@@ -95,16 +98,35 @@ public class YagoEfficiencyTest {
 		}
 	}
 
-	public ArrayList<Integer> getCandidate(int uAttr) {
-
+	public ArrayList<Integer> getCandidate(QuantifiedPattern p) {
 		ArrayList<Integer> cands = new ArrayList<Integer>();
 		for (int vid : g.allVertices().keySet()) {
-			if (KeyGen.getYagoKey(vid) == uAttr) {
+			if (g.getVertex(vid).isInnerNode()
+					&& KeyGen.getYagoKey(vid) == p.getGraph().getVertex(0).getAttr()) {
+
+				boolean hasChildLabel1 = false;
+				boolean hasChildLabel2 = false;
+
 				for (int cid : g.getChildren(vid)) {
-					if (KeyGen.getYagoKey(cid) == 12) {
-						System.out.println("vid = " + vid + ", cid=" + cid);
-						cands.add(vid);
+					if (!hasChildLabel1 && p.getGraph().getVertex(1).match(g.getVertex(cid))) {
+						hasChildLabel1 = true;
+						if (hasChildLabel1 && hasChildLabel2) {
+							break;
+						}
 					}
+					if (!hasChildLabel2 && p.getGraph().getVertex(2).match(g.getVertex(cid))) {
+						hasChildLabel2 = true;
+						if (hasChildLabel1 && hasChildLabel2) {
+							break;
+						}
+					}
+					if (hasChildLabel1 && hasChildLabel2) {
+						break;
+					}
+				}
+
+				if (hasChildLabel1 && hasChildLabel2) {
+					cands.add(vid);
 				}
 
 			}

@@ -19,5 +19,4 @@ public class KeyGen {
 	public static int getYagoKey(int attr) {
 		return attr / 10000000;
 	}
-
 }
