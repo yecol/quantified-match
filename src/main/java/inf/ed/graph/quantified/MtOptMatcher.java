@@ -316,7 +316,11 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 		for (Int2IntMap match : matches) {
 			int fv = match.get(ufromID);
 			int tv = match.get(utoID);
-			IntSet maps = aggregatedMatchesByFv.getOrDefault(fv, new IntOpenHashSet());
+			if (!aggregatedMatchesByFv.containsKey(fv)) {
+				IntSet set = new IntOpenHashSet();
+				aggregatedMatchesByFv.put(fv, set);
+			}
+			IntSet maps = aggregatedMatchesByFv.get(fv);
 			maps.add(tv);
 			aggregatedMatchesByFv.put(fv, maps);
 		}
