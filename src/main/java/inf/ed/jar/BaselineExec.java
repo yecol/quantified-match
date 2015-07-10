@@ -135,6 +135,8 @@ public class BaselineExec {
 
 					j++;
 
+					log.info("process cand-" + v);
+
 					BaseMatcher<VertexOInt, OrthogonalEdge> inspector = new BaseMatcher<VertexOInt, OrthogonalEdge>();
 					boolean iso = inspector.isIsomorphic(pp, 0, g, v);
 					if (iso == true) {
