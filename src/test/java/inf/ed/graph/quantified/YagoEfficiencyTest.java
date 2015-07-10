@@ -20,6 +20,15 @@ public class YagoEfficiencyTest {
 
 	static Graph<VertexOInt, OrthogonalEdge> g;
 
+	static public int getLabelOfBeginNode(int attr) {
+		if (attr < 100000000) {
+			// pokec others
+			return attr;
+		} else {
+			return attr / 10000000;
+		}
+	}
+
 	@BeforeClass
 	public static void prepareData() {
 
@@ -28,15 +37,15 @@ public class YagoEfficiencyTest {
 		g.loadGraphFromVEFile(filePath, true);
 	}
 
-	// @Ignore
+	@Ignore
 	@Test
 	public void baselineTest() {
 
 		QuantifiedPattern pp = new QuantifiedPattern();
-		pp.loadPatternFromVEFile("dataset/test/q-yago2");
-		// pp.display();
+		pp.loadPatternFromVEFile("dataset/yago2/p3-1");
+		pp.display();
 
-		ArrayList<Integer> candidates = this.getCandidate(pp);
+		ArrayList<Integer> candidates = findCandidates(g, pp);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -49,7 +58,7 @@ public class YagoEfficiencyTest {
 			if (i % 1000 == 0) {
 				System.out.println("processed i=" + i + "/" + candidates.size());
 			}
-			if (i > 3000) {
+			if (i > 1000) {
 				break;
 			}
 			log.info("=BASE===== current process" + " " + v + "======BASE=");
@@ -61,28 +70,20 @@ public class YagoEfficiencyTest {
 			}
 		}
 
-		System.out.println(yes.size());
+		System.out.println("final result = " + yes.size());
+		System.out.println("yes = " + yes.toString());
 	}
 
-	@Ignore
+	// @Ignore
 	@Test
 	public void quanCheckTest() {
 
 		QuantifiedPattern pp = new QuantifiedPattern();
-		pp.loadPatternFromVEFile("dataset/test/q-pokec2");
+		pp.loadPatternFromVEFile("dataset/yago2/p3-1");
 		// pp.display();
 
 		ArrayList<Integer> candidates = new ArrayList<Integer>();
-
-		// for (VertexOInt n : g.allVertices().values()) {
-		// if (n.getAttr() == 1) {
-		// // System.out.println(n.getID());
-		// candidates.add(n.getID());
-		// }
-		// }
-		candidates.add(76);
-		// candidates.add(246287);
-		// candidates.add(246388);
+		candidates.add(100671612);
 
 		System.out.println("candidates size = " + candidates.size());
 
@@ -98,11 +99,13 @@ public class YagoEfficiencyTest {
 		}
 	}
 
-	public ArrayList<Integer> getCandidate(QuantifiedPattern p) {
+	static public ArrayList<Integer> findCandidates(Graph<VertexOInt, OrthogonalEdge> g,
+			QuantifiedPattern p) {
 		ArrayList<Integer> cands = new ArrayList<Integer>();
 		for (int vid : g.allVertices().keySet()) {
 			if (g.getVertex(vid).isInnerNode()
-					&& KeyGen.getYagoKey(vid) == p.getGraph().getVertex(0).getAttr()) {
+					&& getLabelOfBeginNode(g.getVertex(vid).getAttr()) == p.getGraph().getVertex(0)
+							.getAttr()) {
 
 				boolean hasChildLabel1 = false;
 				boolean hasChildLabel2 = false;
@@ -119,9 +122,6 @@ public class YagoEfficiencyTest {
 						if (hasChildLabel1 && hasChildLabel2) {
 							break;
 						}
-					}
-					if (hasChildLabel1 && hasChildLabel2) {
-						break;
 					}
 				}
 

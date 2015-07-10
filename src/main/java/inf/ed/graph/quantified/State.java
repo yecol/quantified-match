@@ -315,6 +315,7 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 									((VertexInt) p.getVertex(other1)).getAttr()))) {
 						m.checkedAndInvalid(v1, v2);
 						return false;
+
 					} else if (f.isPercentage()
 							&& !f.isValid(
 									getEdgePatternCount(v2, te.getAttr(),
@@ -623,7 +624,7 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 			ret = 0;
 			for (int toID : g.getChildren(fromID)) {
 				if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr
-						&& ((VertexOInt) g.getVertex(toID)).getAttr() == tnAttr) {
+						&& KeyGen.compareAttr(((VertexOInt) g.getVertex(toID)).getAttr(), tnAttr)) {
 					ret++;
 				}
 			}
