@@ -518,7 +518,6 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 	public boolean isDead() {
 		if (core1.size() == 1 && checkQuantifiers) {
 			int u = core1.keySet().toIntArray()[0];
-			System.out.println("check u = " + u);
 			return !areCompatableQuantifiers(u, core1.get(u));
 		} else {
 			return n1 > n2 || t1bothLen > t2bothLen || t1outLen > t2outLen || t1inLen > t2inLen;
@@ -624,7 +623,7 @@ public class State<VQ extends Vertex, EQ extends Edge, VG extends Vertex, EG ext
 			ret = 0;
 			for (int toID : g.getChildren(fromID)) {
 				if (((OrthogonalEdge) g.getEdge(fromID, toID)).getAttr() == edgeAttr
-						&& KeyGen.compareAttr(((VertexOInt) g.getVertex(toID)).getAttr(), tnAttr)) {
+						&& ((VertexOInt) g.getVertex(toID)).getAttr() == tnAttr) {
 					ret++;
 				}
 			}

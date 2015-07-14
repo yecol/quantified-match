@@ -189,7 +189,6 @@ public class MtOptMatcher<VG extends Vertex, EG extends Edge> {
 	private void findMathesOfPI(int cand, List<Int2IntMap> matches, QuantifierCheckMatrix m) {
 
 		long start = System.currentTimeMillis();
-		p.getPI().display(1000);
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), du, g, cand,
 				p.getQuantifiers(), m);

@@ -50,11 +50,7 @@ public class VertexInt implements Vertex, Serializable {
 			return this.attr == o.attr;
 		} else if (other instanceof VertexOInt) {
 			VertexOInt o = (VertexOInt) other;
-			if (KeyGen.isYagoAttrTypeOnly(this.attr)) {
-				return this.attr == KeyGen.getYagoKey(o.getAttr());
-			} else {
-				return this.attr == o.attr;
-			}
+			return this.attr == o.attr;
 		}
 		throw new IllegalArgumentException("Unmatchable");
 	}

@@ -86,7 +86,6 @@ public class OptMatcher<VG extends Vertex, EG extends Edge> {
 	private void findMathesOfPI() {
 
 		long start = System.currentTimeMillis();
-		p.getPI().display(1000);
 
 		State initState = new State<VertexInt, TypedEdge, VG, EG>(p.getPI(), v1, g, v2,
 				p.getQuantifiers(), m);
